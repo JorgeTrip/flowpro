@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+/* Tema claro personalizado con tonos de gris */
+:root {
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+}
+
+body:not(.dark) {
+  background-color: var(--gray-100);
+  color: var(--gray-800);
+}
+
+/* Personalizar fondos de componentes en modo claro */
+html:not(.dark) body .bg-white {
+  background-color: var(--gray-50) !important;
+}
+
+html:not(.dark) body .bg-gray-50 {
+  background-color: var(--gray-100) !important;
+}
+
+html:not(.dark) body .border-gray-200 {
+  border-color: var(--gray-300) !important;
+}
+
+/* Mejorar visibilidad de títulos en modo claro */
+html:not(.dark) body h1,
+html:not(.dark) body h2,
+html:not(.dark) body h3,
+html:not(.dark) body h4,
+html:not(.dark) body h5,
+html:not(.dark) body h6,
+html:not(.dark) body .text-xl,
+html:not(.dark) body .text-2xl,
+html:not(.dark) body .text-3xl,
+html:not(.dark) body .font-semibold,
+html:not(.dark) body .font-bold {
+  color: var(--gray-900) !important;
+}
+
+html:not(.dark) body .text-gray-900 {
+  color: var(--gray-900) !important;
+}
+
+html:not(.dark) body .text-gray-800 {
+  color: var(--gray-900) !important;
+}
+
+/* Asegurar que el modo oscuro funcione correctamente */
+html.dark body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
