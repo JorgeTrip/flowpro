@@ -2,7 +2,7 @@
 import * as ExcelJS from 'exceljs';
 import type { ExcelRow } from '@/app/stores/estimarDemandaStore';
 
-export const processExcelFile = async (file: File): Promise<{ data: ExcelRow[], columns: string[], previewData: ExcelRow[] }> => {
+export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], columns: string[], previewData: ExcelRow[] }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -56,8 +56,8 @@ export const processExcelFile = async (file: File): Promise<{ data: ExcelRow[], 
         });
 
         resolve({ data, columns, previewData });
-      } catch (error) {
-        console.error('Error procesando el archivo Excel:', error);
+      } catch {
+        console.error('Error procesando el archivo Excel');
         reject(new Error('El archivo parece estar dañado o no es un formato de Excel válido.'));
       }
     };

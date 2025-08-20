@@ -39,8 +39,8 @@ export function FileUpload({ fileType, title }: FileUploadProps) {
           setStockFile(uploadedFile);
           setStockData(data, columns, previewData);
         }
-      } catch (err: any) {
-        setError(`Error al procesar el archivo de ${fileType}: ${err.message || 'Ocurrió un error inesperado.'}`);
+      } catch (error: unknown) {
+        setError(`Error al procesar el archivo de ${fileType}: ${error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}`);
       } finally {
         setIsLoading(false);
       }

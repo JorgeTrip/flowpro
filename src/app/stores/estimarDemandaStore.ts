@@ -5,6 +5,27 @@ export interface ExcelRow {
   [key: string]: string | number;
 }
 
+interface Configuracion {
+  mapeo: {
+    ventas: {
+      productoId: string;
+      cantidad: string;
+    };
+    stock: {
+      productoId: string;
+      cantidad: string;
+    };
+  };
+}
+
+interface ResultadoItem {
+  productoId: string | number;
+  venta: number;
+  stock: number;
+  demandaInsatisfecha: number;
+  sugerencia: string;
+}
+
 interface EstimarDemandaState {
   // State
   step: number;
@@ -16,8 +37,8 @@ interface EstimarDemandaState {
   stockData: ExcelRow[];
   stockPreviewData: ExcelRow[];
   stockColumnas: string[];
-  configuracion: any; // Replace with a proper config type
-  resultados: any; // Replace with a proper results type
+  configuracion: Configuracion | null;
+  resultados: ResultadoItem[] | null;
   isLoading: boolean;
   error: string | null;
 
@@ -27,8 +48,8 @@ interface EstimarDemandaState {
   setStockFile: (file: File | null) => void;
   setVentasData: (data: ExcelRow[], columnas: string[], previewData: ExcelRow[]) => void;
   setStockData: (data: ExcelRow[], columnas: string[], previewData: ExcelRow[]) => void;
-  setConfiguracion: (config: any) => void;
-  setResultados: (resultados: any) => void;
+  setConfiguracion: (configuracion: Configuracion) => void;
+  setResultados: (resultados: ResultadoItem[]) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;

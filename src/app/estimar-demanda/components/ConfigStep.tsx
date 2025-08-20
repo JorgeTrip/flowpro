@@ -26,14 +26,16 @@ export function ConfigStep() {
   const {
     ventasFile,
     stockFile,
-    ventasData,
-    stockData,
     ventasColumnas,
     stockColumnas,
-    configuracion,
-    setResultados,
-    setConfiguracion,
+  } = useEstimarDemandaStore();
+
+  const {
+    ventasData,
+    stockData,
     setStep,
+    setConfiguracion,
+    setResultados,
     setIsLoading,
     setError,
     ventasPreviewData,
@@ -75,9 +77,9 @@ export function ConfigStep() {
       
       setResultados(resultados);
       setStep(3);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error durante el análisis:', err);
-      setError(err.message || 'Ocurrió un error durante el análisis.');
+      setError(err instanceof Error ? err.message : 'Ocurrió un error durante el análisis.');
     } finally {
       setIsLoading(false);
     }

@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlowPro - Utilidades de Gestión Empresarial
 
-## Getting Started
+**© 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados**
 
-First, run the development server:
+FlowPro es una suite de herramientas empresariales desarrollada en Next.js que ayuda a optimizar la gestión de inventarios y análisis de demanda.
 
+## 🚀 Características
+
+### Módulo de Estimación de Demanda
+- **Análisis de Demanda vs. Stock**: Compara las ventas del año anterior con el stock actual
+- **Carga de Archivos Excel**: Soporte para archivos `.xlsx` y `.xls`
+- **Mapeo de Columnas**: Configuración flexible para diferentes formatos de datos
+- **Visualización de Resultados**: Gráficos interactivos y tablas detalladas
+- **Sugerencias Inteligentes**: Recomendaciones automáticas de compra basadas en el análisis
+
+### Características de la Interfaz
+- **Tema Claro/Oscuro**: Cambio dinámico entre modos con tonos de gris personalizados
+- **Diseño Responsivo**: Optimizado para desktop y móvil
+- **Navegación Modular**: Sidebar con módulos organizados por categorías
+- **Feedback Visual**: Indicadores de carga y estados de error
+
+## 🛠️ Stack Tecnológico
+
+- **Framework**: Next.js 15.5.0 con App Router
+- **Lenguaje**: TypeScript
+- **Estilos**: Tailwind CSS v4
+- **Estado Global**: Zustand con persistencia
+- **Procesamiento Excel**: ExcelJS
+- **Gráficos**: Recharts
+- **Iconos**: Lucide React
+- **Drag & Drop**: React Dropzone
+
+## 📋 Requisitos
+
+- Node.js 18+ 
+- npm, yarn, pnpm o bun
+
+## 🚀 Instalación y Desarrollo
+
+1. **Clonar el repositorio**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/JorgeTrip/flowpro.git
+cd flowpro
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Instalar dependencias**
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Ejecutar en modo desarrollo**
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **Abrir en el navegador**
+```
+http://localhost:3000
+```
 
-## Learn More
+## 📦 Scripts Disponibles
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev      # Servidor de desarrollo
+npm run build    # Build de producción
+npm run start    # Servidor de producción
+npm run lint     # Linting con ESLint
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🏗️ Estructura del Proyecto
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── components/          # Componentes reutilizables
+│   │   ├── layout/         # Header, Sidebar, Footer, etc.
+│   │   └── business/       # Componentes de lógica de negocio
+│   ├── estimar-demanda/    # Módulo de estimación de demanda
+│   │   ├── components/     # Componentes específicos del módulo
+│   │   └── page.tsx        # Página principal del módulo
+│   ├── lib/                # Utilidades y lógica de negocio
+│   ├── stores/             # Estado global con Zustand
+│   └── globals.css         # Estilos globales
+```
 
-## Deploy on Vercel
+## 🎯 Uso del Módulo de Estimación de Demanda
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Paso 1**: Cargar archivo de ventas del año anterior (Excel)
+2. **Paso 2**: Cargar archivo de stock actual (Excel)
+3. **Paso 3**: Configurar mapeo de columnas (ID Producto, Cantidad)
+4. **Paso 4**: Ejecutar análisis y revisar resultados
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Formato de Archivos Excel
+
+Los archivos deben contener al menos:
+- **Columna de ID de Producto**: Identificador único del producto
+- **Columna de Cantidad**: Cantidad vendida o en stock
+
+## 🎨 Personalización de Temas
+
+La aplicación incluye un sistema de temas personalizable:
+- **Modo Claro**: Tonos de gris suaves para reducir la fatiga visual
+- **Modo Oscuro**: Esquema oscuro tradicional
+- **Transiciones Suaves**: Cambios animados entre temas
+
+## 🚀 Deployment
+
+### Netlify (Recomendado)
+```bash
+npm run build
+# Los archivos se generan en .next/
+```
+
+### Vercel
+```bash
+vercel --prod
+```
+
+## 🤝 Contribución
+
+Este es un proyecto propietario. Para consultas sobre colaboración, contactar al desarrollador.
+
+## 📄 Licencia
+
+© 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados.
+
+## 📞 Contacto
+
+Para soporte técnico o consultas comerciales, contactar al desarrollador principal.

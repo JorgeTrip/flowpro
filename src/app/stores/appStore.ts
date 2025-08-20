@@ -9,23 +9,35 @@ interface Notification {
   type: 'info' | 'warning' | 'error';
 }
 
+interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+}
+
+interface Empresa {
+  id: string;
+  nombre: string;
+  rubro: string;
+}
+
 interface AppState {
-  usuario: any; // Replace with a proper User type
-  empresa: any; // Replace with a proper Empresa type
+  usuario: Usuario | null;
+  empresa: Empresa | null;
   configuracionGlobal: {
     tema: 'light' | 'dark';
     idioma: 'es' | 'en';
     zona_horaria: string;
   };
   modulosActivos: string[];
-  estadosModulos: Record<string, any>;
+  estadosModulos: Record<string, unknown>;
   notificaciones: Notification[];
-  alertasSistema: any[];
-  setUsuario: (usuario: any) => void;
-  setEmpresa: (empresa: any) => void;
+  alertasSistema: unknown[];
+  setUsuario: (usuario: Usuario | null) => void;
+  setEmpresa: (empresa: Empresa | null) => void;
   activarModulo: (moduloId: string) => void;
   desactivarModulo: (moduloId: string) => void;
-  setEstadoModulo: (moduloId: string, estado: any) => void;
+  setEstadoModulo: (moduloId: string, estado: unknown) => void;
   agregarNotificacion: (notificacion: Omit<Notification, 'id' | 'timestamp'>) => void;
   toggleTheme: () => void;
 }
