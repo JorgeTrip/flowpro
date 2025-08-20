@@ -1,0 +1,12 @@
+Necesito una aplicación que sea capaz de armar, dada una planilla de Excel con direcciones, una hoja de ruta que las conecte para hacer un recorrido, indicando cuántos kilómetros se recorren en total (conectando cada dirección mediante recorrido mínimo por calle, no distancia directa de punto a punto).  Quiero usar la API de OpenStreetMap.
+
+La planilla tiene las siguientes columnas:
+FECHA DE EMISION	COD.VENDEDOR	CODIGO CLIENTE	RAZON SOCIAL	DIRECCION DE ENTREGA	LOCALIDAD	TIPO COMPROBANTE	NRO. COMPROBANTE	TOTAL A COBRAR	CANTIDAD DE BULTOS	HORARIO_ENTREGA	DESC_COND
+
+Las direcciones, serán la suma del campo "Direccion de entrega" + "Localidad".  Como se repiten en diferentes filas, deberá agrupar los pedidos por Razon social como si fuera un solo pedido.
+
+Necesito además, que una vez que agrupe los pedidos por razon social y los considere como un solo pedido, arroje el total de Importe de cada Razon social y el total de pedidos de la hoja.
+
+El código debe ser bien estructurado, comentado y modularizado, y debidamente comentado tanto módulos como funciones en español.  Los archivos y carpetas del proyecto, deberán organizarse según buenas prácticas de programación.
+
+Publicaré el proyecto en GitHub y lo subiré a Netlify, de modo que deberás hacer los cambios necesarios para que el funcionamiento sea correcto una vez publicado allí.

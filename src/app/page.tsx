@@ -7,7 +7,7 @@ import { ModulosDisponiblesPanel } from '@/app/components/business/ModulosDispon
 import { MODULOS_DISPONIBLES } from '@/app/lib/moduleRegistry';
 
 export default function DashboardPage() {
-  const modulosActivos = MODULOS_DISPONIBLES.filter(m => m.activo);
+  const modulosActivos = MODULOS_DISPONIBLES.filter(m => m.activo && m.id !== 'dashboard');
 
   return (
     <ModuleLayout

@@ -1,0 +1,20 @@
+.sidebar {
+  width: 200px; /* Adjust as needed */
+  background-color: #f0f2f5;
+  padding: 20px;
+}
+
+.sidebar nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar nav li {
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.sidebar nav li:hover {
+  color: #1890ff; /* Ant Design primary color */
+}

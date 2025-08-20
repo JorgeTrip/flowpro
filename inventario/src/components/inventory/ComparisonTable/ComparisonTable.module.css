@@ -1,0 +1,10 @@
+.comparisonTableContainer {
+  margin-top: 20px;
+}
+
+.table .ant-table-thead > tr > th {
+  background-color: #f0f2f5; /* Light grey background for header */
+  font-weight: bold;
+}
+
+/* Add more custom styles as needed */

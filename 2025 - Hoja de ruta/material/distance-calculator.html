@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Distancias</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-container {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #map {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            display: none;
+        }
+        .address-list {
+            margin-top: 10px;
+        }
+        .address-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .remove-btn {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .remove-btn:hover {
+            background-color: #e60000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calculadora de Distancias</h1>
+    
+    <div class="input-container">
+        <label for="destination">Dirección de Destino:</label>
+        <input type="text" id="destination" placeholder="Ej: Avenida Siempreviva 742, Springfield">
+    </div>
+    
+    <div class="input-container">
+        <label for="origin">Agregar Dirección de Origen:</label>
+        <input type="text" id="origin" placeholder="Ej: Calle Principal 123, Ciudad">
+        <button id="addOrigin">Agregar Dirección</button>
+    </div>
+    
+    <div class="address-list" id="originsList"></div>
+    
+    <button id="calculate">Calcular Distancias</button>
+    
+    <div id="map"></div>
+    
+    <div id="results">
+        <h2>Resultados:</h2>
+        <ul id="distanceResults"></ul>
+    </div>
+
+    <script>
+        // REEMPLAZAR CON TU TOKEN DE MAPBOX
+        const mapboxToken = 'pk.eyJ1IjoiZXhlbXBsZXRva2VuIiwiYSI6ImNrd3M5b2F3ZzA5c3YycXFrbnplNzNtZXoifQ.ExampleTokenOnly';
+        
+        const origins = [];
+        
+        mapboxgl.accessToken = mapboxToken;
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-74.5, 40], // Coordenadas iniciales
+            zoom: 2
+        });
+        
+        // Markers
+        const markers = [];
+        let destinationMarker = null;
+        
+        document.getElementById('addOrigin').addEventListener('click', function() {
+            const originInput = document.getElementById('origin');
+            const originAddress = originInput.value.trim();
+            
+            if (originAddress) {
+                origins.push(originAddress);
+                updateOriginsList();
+                originInput.value = '';
+            } else {
+                alert('Por favor ingresa una dirección de origen válida.');
+            }
+        });
+        
+        function updateOriginsList() {
+            const list = document.getElementById('originsList');
+            list.innerHTML = '';
+            
+            origins.forEach((origin, index) => {
+                const item = document.createElement('div');
+                item.className = 'address-item';
+                
+                const text = document.createElement('span');
+                text.textContent = origin;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = 'Eliminar';
+                removeBtn.addEventListener('click', () => {
+                    origins.splice(index, 1);
+                    updateOriginsList();
+                });
+                
+                item.appendChild(text);
+                item.appendChild(removeBtn);
+                list.appendChild(item);
+            });
+        }
+        
+        document.getElementById('calculate').addEventListener('click', async function() {
+            const destinationInput = document.getElementById('destination');
+            const destination = destinationInput.value.trim();
+            
+            if (!destination) {
+                alert('Por favor ingresa una dirección de destino.');
+                return;
+            }
+            
+            if (origins.length === 0) {
+                alert('Por favor agrega al menos una dirección de origen.');
+                return;
+            }
+            
+            // Limpiar marcadores anteriores
+            markers.forEach(marker => marker.remove());
+            markers.length = 0;
+            if (destinationMarker) destinationMarker.remove();
+            
+            try {
+                // Geocodificar el destino
+                const destCoords = await geocodeAddress(destination);
+                
+                // Agregar marcador para el destino
+                destinationMarker = new mapboxgl.Marker({ color: '#3887be' })
+                    .setLngLat(destCoords)
+                    .addTo(map);
+                
+                // Calcular distancias para cada origen
+                const results = [];
+                for (const origin of origins) {
+                    const originCoords = await geocodeAddress(origin);
+                    
+                    // Agregar marcador para el origen
+                    const marker = new mapboxgl.Marker({ color: '#f50057' })
+                        .setLngLat(originCoords)
+                        .addTo(map);
+                    markers.push(marker);
+                    
+                    // Calcular distancia
+                    const distance = await calculateDistance(originCoords, destCoords);
+                    results.push({ origin, distance });
+                }
+                
+                // Ajustar el mapa para mostrar todos los marcadores
+                fitBounds();
+                
+                // Mostrar resultados
+                displayResults(results);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ocurrió un error al calcular las distancias. Por favor verifica las direcciones e intenta nuevamente.');
+            }
+        });
+        
+        async function geocodeAddress(address) {
+            const encodedAddress = encodeURIComponent(address);
+            const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}`);
+            const data = await response.json();
+            
+            if (data.features && data.features.length > 0) {
+                return data.features[0].center;
+            } else {
+                throw new Error(`No se pudo geocodificar la dirección: ${address}`);
+            }
+        }
+        
+        async function calculateDistance(origin, destination) {
+            const response = await fetch(
+                `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?access_token=${mapboxToken}`
+            );
+            const data = await response.json();
+            
+            if (data.routes && data.routes.length > 0) {
+                // Distancia en metros, convertir a kilómetros
+                return (data.routes[0].distance / 1000).toFixed(2);
+            } else {
+                return 'No se pudo calcular';
+            }
+        }
+        
+        function fitBounds() {
+            const bounds = new mapboxgl.LngLatBounds();
+            
+            // Incluir el destino
+            if (destinationMarker) {
+                bounds.extend(destinationMarker.getLngLat());
+            }
+            
+            // Incluir todos los orígenes
+            markers.forEach(marker => {
+                bounds.extend(marker.getLngLat());
+            });
+            
+            map.fitBounds(bounds, { padding: 70 });
+        }
+        
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('results');
+            const resultsList = document.getElementById('distanceResults');
+            resultsList.innerHTML = '';
+            
+            results.forEach(result => {
+                const item = document.createElement('li');
+                item.textContent = `De "${result.origin}" a destino: ${result.distance} km`;
+                resultsList.appendChild(item);
+            });
+            
+            resultsContainer.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

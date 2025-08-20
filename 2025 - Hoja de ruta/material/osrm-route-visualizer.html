@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Rutas OSRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #map {
+            flex: 1;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #controls {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        #pointsInput {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .radio-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        #status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            min-height: 40px;
+        }
+        .options-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .legend {
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h2>Visualizador de Rutas OSRM</h2>
+        <div id="map"></div>
+        <div id="controls">
+            <textarea id="pointsInput" placeholder="Ingresa las coordenadas en formato longitude,latitude separadas por punto y coma. Ejemplo:
+-58.402300,-34.615200;-58.381500,-34.646300;-58.377200,-34.613100;-58.381600,-34.603700;-58.393900,-34.587300"></textarea>
+            
+            <div class="radio-container">
+                <label><input type="radio" name="profile" value="driving" checked> En auto</label>
+                <label><input type="radio" name="profile" value="walking"> Caminando</label>
+                <label><input type="radio" name="profile" value="cycling"> En bicicleta</label>
+            </div>
+            
+            <div class="options-container">
+                <label><input type="checkbox" id="roundtrip" checked> Ruta circular</label>
+                <label><input type="checkbox" id="sourceFirst" checked> Empezar en el primer punto</label>
+                <label><input type="checkbox" id="destinationLast"> Terminar en el último punto</label>
+            </div>
+            
+            <div class="button-container">
+                <button id="calculateBtn">Calcular Ruta Óptima</button>
+                <button id="clearBtn">Limpiar Mapa</button>
+            </div>
+            
+            <div id="status">Ingresa coordenadas y haz clic en "Calcular Ruta Óptima"</div>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar el mapa de Leaflet
+        const map = L.map('map').setView([-34.615200, -58.402300], 13);
+        
+        // Añadir capa base de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Añadir leyenda al mapa
+        const legend = L.control({position: 'bottomright'});
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <div class="legend-item"><div class="legend-color" style="background-color: red;"></div> Punto de inicio</div>
+                <div class="legend-item"><div class="legend-color" style="background-color: blue;"></div> Puntos intermedios</div>
+                <div class="legend-item"><div class="legend-color" style="background-color: green;"></div> Punto final</div>
+                <div class="legend-item"><div class="legend-color" style="background-color: purple;"></div> Ruta optimizada</div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+        
+        // Variables para almacenar capas
+        let markersLayer = L.layerGroup().addTo(map);
+        let routeLayer = L.layerGroup().addTo(map);
+        
+        // Obtener elementos del DOM
+        const pointsInput = document.getElementById('pointsInput');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusDiv = document.getElementById('status');
+        const roundtripCheckbox = document.getElementById('roundtrip');
+        const sourceFirstCheckbox = document.getElementById('sourceFirst');
+        const destinationLastCheckbox = document.getElementById('destinationLast');
+        
+        // Rellenar el textarea con el ejemplo
+        pointsInput.value = '-58.402300,-34.615200;-58.381500,-34.646300;-58.377200,-34.613100;-58.381600,-34.603700;-58.393900,-34.587300';
+        
+        // Función para eliminar duplicados de las coordenadas
+        function removeDuplicates(points) {
+            const uniquePoints = [];
+            const seen = new Set();
+            
+            for (const point of points) {
+                const key = `${point[0]},${point[1]}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniquePoints.push(point);
+                }
+            }
+            
+            return uniquePoints;
+        }
+        
+        // Función para calcular la ruta
+        async function calculateRoute() {
+            // Limpiar capas existentes
+            markersLayer.clearLayers();
+            routeLayer.clearLayers();
+            
+            // Obtener los puntos del textarea
+            const inputText = pointsInput.value.trim();
+            if (!inputText) {
+                statusDiv.innerHTML = 'Error: No se han ingresado coordenadas';
+                statusDiv.style.color = 'red';
+                return;
+            }
+            
+            try {
+                // Parsear coordenadas
+                const pairs = inputText.split(';');
+                let points = pairs.map(pair => {
+                    const [lon, lat] = pair.split(',').map(Number);
+                    if (isNaN(lon) || isNaN(lat)) {
+                        throw new Error(`Coordenada inválida: ${pair}`);
+                    }
+                    return [lon, lat];
+                });
+                
+                // Eliminar duplicados
+                const uniquePoints = removeDuplicates(points);
+                if (uniquePoints.length < 2) {
+                    statusDiv.innerHTML = 'Error: Se necesitan al menos 2 puntos diferentes para calcular una ruta';
+                    statusDiv.style.color = 'red';
+                    return;
+                }
+                
+                // Mostrar estado
+                statusDiv.innerHTML = 'Calculando ruta...';
+                statusDiv.style.color = 'blue';
+                
+                // Obtener perfil seleccionado
+                const profile = document.querySelector('input[name="profile"]:checked').value;
+                
+                // Construir la URL para la API de OSRM
+                let url = `https://router.project-osrm.org/trip/v1/${profile}/`;
+                url += uniquePoints.map(p => `${p[0]},${p[1]}`).join(';');
+                url += '?overview=full&geometries=geojson';
+                
+                // Añadir parámetros opcionales
+                if (!roundtripCheckbox.checked) {
+                    url += '&roundtrip=false';
+                }
+                if (sourceFirstCheckbox.checked) {
+                    url += '&source=first';
+                }
+                if (destinationLastCheckbox.checked) {
+                    url += '&destination=last';
+                }
+                
+                // Realizar la solicitud a la API
+                statusDiv.innerHTML = `Consultando: ${url}<br>Puede tomar unos segundos...`;
+                
+                try {
+                    const response = await fetch(url, {
+                        mode: 'cors',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error en la API de OSRM: ${response.statusText}`);
+                    }
+                } catch (fetchError) {
+                    // Si falla con CORS, mostrar un mensaje más claro
+                    console.error("Error de fetch:", fetchError);
+                    throw new Error(`No se pudo conectar con la API de OSRM. Es posible que haya restricciones CORS. 
+                    Prueba usando esta URL directamente en una nueva pestaña del navegador: ${url}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.code !== 'Ok') {
+                    throw new Error(`Error en el cálculo de la ruta: ${data.message || 'Desconocido'}`);
+                }
+                
+                // Obtener la ruta y el orden de los waypoints
+                const route = data.trips[0].geometry;
+                const waypoints = data.waypoints;
+                
+                // Añadir marcadores para los waypoints en el orden optimizado
+                waypoints.forEach((wp, index) => {
+                    const [lon, lat] = wp.location;
+                    let icon;
+                    
+                    if (index === 0) {
+                        // Primer punto (inicio)
+                        icon = L.divIcon({
+                            html: `<div style="background-color: red; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+                            className: 'custom-marker',
+                            iconSize: [16, 16]
+                        });
+                    } else if (index === waypoints.length - 1) {
+                        // Último punto (fin)
+                        icon = L.divIcon({
+                            html: `<div style="background-color: green; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+                            className: 'custom-marker',
+                            iconSize: [16, 16]
+                        });
+                    } else {
+                        // Puntos intermedios
+                        icon = L.divIcon({
+                            html: `<div style="background-color: blue; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white;"></div>`,
+                            className: 'custom-marker',
+                            iconSize: [12, 12]
+                        });
+                    }
+                    
+                    const marker = L.marker([lat, lon], { icon: icon })
+                        .bindPopup(`Punto ${index + 1}<br>Lat: ${lat.toFixed(6)}<br>Lon: ${lon.toFixed(6)}`);
+                    markersLayer.addLayer(marker);
+                });
+                
+                // Dibujar la ruta
+                const routeLine = L.geoJSON(route, {
+                    style: {
+                        color: 'purple',
+                        weight: 5,
+                        opacity: 0.7
+                    }
+                });
+                routeLayer.addLayer(routeLine);
+                
+                // Ajustar el mapa para mostrar todos los puntos
+                const bounds = routeLine.getBounds();
+                map.fitBounds(bounds, { padding: [50, 50] });
+                
+                // Mostrar información de la ruta
+                const distance = (data.trips[0].distance / 1000).toFixed(2);
+                const duration = (data.trips[0].duration / 60).toFixed(1);
+                
+                statusDiv.innerHTML = `Ruta calculada: ${distance} km, ${duration} minutos`;
+                statusDiv.style.color = 'green';
+                
+                // Mostrar URL de la API
+                console.log('URL de la API:', url);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `Error: ${error.message}`;
+                statusDiv.style.color = 'red';
+            }
+        }
+        
+        // Función para limpiar el mapa
+        function clearMap() {
+            markersLayer.clearLayers();
+            routeLayer.clearLayers();
+            statusDiv.innerHTML = 'Mapa limpiado';
+            statusDiv.style.color = 'black';
+        }
+        
+        // Registrar eventos
+        calculateBtn.addEventListener('click', calculateRoute);
+        clearBtn.addEventListener('click', clearMap);
+        
+        // Incompatibilidad entre roundtrip=false y destination=last
+        roundtripCheckbox.addEventListener('change', function() {
+            if (!this.checked) {
+                sourceFirstCheckbox.checked = true;
+                sourceFirstCheckbox.disabled = true;
+            } else {
+                sourceFirstCheckbox.disabled = false;
+            }
+        });
+        
+        // No permitir source=first y destination=last si roundtrip=false
+        destinationLastCheckbox.addEventListener('change', function() {
+            if (this.checked && !roundtripCheckbox.checked) {
+                roundtripCheckbox.checked = true;
+            }
+        });
+    </script>
+</body>
+</html>

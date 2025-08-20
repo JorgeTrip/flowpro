@@ -1,0 +1,14 @@
+.header {
+  background-color: #001529;
+  padding: 0 50px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px; /* Standard Ant Design header height */
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 20px;
+}

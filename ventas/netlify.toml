@@ -1,0 +1,12 @@
+# netlify.toml
+[build]
+# Usar el comando de build estándar de Vite
+command = "npm run build"
+# Directorio de salida de Vite
+publish = "dist"
+
+# Configuración para manejar rutas de SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

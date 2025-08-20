@@ -15,14 +15,23 @@ function ModuloNavItem({ modulo }: { modulo: Modulo }) {
     <Link
       href={modulo.ruta}
       className={clsx(
-        'flex items-center space-x-3 rounded-md p-2 text-sm font-medium',
+        'group relative flex items-center space-x-3 rounded-md p-2 text-sm font-medium overflow-hidden transition-colors duration-200',
         isActive
-          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
+          ? 'text-blue-700 dark:text-blue-300'
+          : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
       )}
     >
-      <span className="text-lg">{modulo.icono}</span>
-      <span>{modulo.nombre}</span>
+      {/* Active State Background */}
+      {isActive && (
+        <div className="absolute inset-0 rounded-md bg-gradient-to-br from-blue-400/10 via-cyan-400/8 to-blue-500/10"></div>
+      )}
+      
+      {/* LED Diffuse Glow Effect */}
+      <div className="absolute inset-0 rounded-md bg-gradient-to-br from-blue-400/20 via-cyan-400/15 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-000"></div>
+      <div className="absolute inset-0 rounded-md shadow-[inset_0_0_30px_rgba(59,130,246,0.3)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-500"></div>
+      
+      <span className="relative text-lg">{modulo.icono}</span>
+      <span className="relative">{modulo.nombre}</span>
     </Link>
   );
 }

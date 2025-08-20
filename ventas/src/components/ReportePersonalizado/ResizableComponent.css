@@ -1,0 +1,143 @@
+.resizable-component {
+  transition: height 0.1s ease, width 0.1s ease;
+  position: relative;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+}
+
+.resizable-component.resizing-s,
+.resizable-component.resizing-n,
+.resizable-component.resizing-se,
+.resizable-component.resizing-sw,
+.resizable-component.resizing-ne,
+.resizable-component.resizing-nw {
+  transition: height 0s !important;
+}
+
+.resizable-component.resizing-e,
+.resizable-component.resizing-w,
+.resizable-component.resizing-se,
+.resizable-component.resizing-sw,
+.resizable-component.resizing-ne,
+.resizable-component.resizing-nw {
+  transition: width 0s !important;
+}
+
+.resizable-component[class*="resizing"] {
+  z-index: 100;
+  user-select: none;
+  border: 1px dashed #1890ff;
+  box-shadow: 0 0 8px rgba(24, 144, 255, 0.3);
+}
+
+.resizable-content {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.resize-handle {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  transform-origin: center;
+  opacity: 0.7;
+  touch-action: none;
+}
+
+.resizable-component:hover .resize-handle {
+  opacity: 1;
+}
+
+.resize-handle:hover {
+  background-color: rgba(24, 144, 255, 0.3) !important;
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* Controlador horizontal (abajo) */
+.resize-handle.resize-s {
+  height: 14px !important; /* Aumentar el área de contacto */
+  bottom: -7px !important; /* Centrar en el borde */
+  border-bottom: 3px dashed #1890ff !important;
+}
+
+.resize-handle.resize-s:hover > div {
+  opacity: 1 !important;
+  width: 80px !important;
+  background-color: #1890ff !important;
+}
+
+.resize-handle.resize-s:active > div {
+  opacity: 1 !important;
+  width: 100px !important;
+  background-color: #1890ff !important;
+}
+
+/* Controlador vertical (derecha) */
+.resize-handle.resize-e {
+  width: 14px !important; /* Aumentar el área de contacto */
+  right: -7px !important; /* Centrar en el borde */
+  border-right: 3px dashed #1890ff !important;
+}
+
+.resize-handle.resize-e:hover > div {
+  opacity: 1 !important;
+  height: 80px !important;
+  background-color: #1890ff !important;
+}
+
+.resize-handle.resize-e:active > div {
+  opacity: 1 !important;
+  height: 100px !important;
+  background-color: #1890ff !important;
+}
+
+/* Controlador de esquina */
+.resize-handle.resize-se {
+  width: 24px !important; /* Aumentar el área de contacto */
+  height: 24px !important;
+  right: -8px !important;
+  bottom: -8px !important;
+  border-right: 3px dashed #1890ff !important;
+  border-bottom: 3px dashed #1890ff !important;
+  background-color: rgba(24, 144, 255, 0.1) !important;
+}
+
+.resize-handle.resize-se:hover {
+  background-color: rgba(24, 144, 255, 0.2) !important;
+}
+
+.resize-handle.resize-se:hover > div {
+  opacity: 1 !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-color: #1890ff !important;
+}
+
+.resize-handle.resize-se:active > div {
+  opacity: 1 !important;
+  width: 16px !important;
+  height: 16px !important;
+  background-color: #1890ff !important;
+}
+
+/* Estilos para el modo impresión */
+.print-mode .resizable-component {
+  margin-bottom: 0;
+  page-break-inside: avoid;
+  width: 100% !important; /* Asegurar que ocupe todo el ancho disponible en impresión */
+}
+
+/* Ocultar elementos en el modo impresión */
+@media print {
+  .resize-handle {
+    display: none !important;
+  }
+  
+  .resizable-component {
+    margin-bottom: 0;
+    page-break-inside: avoid;
+    width: 100% !important;
+  }
+}
