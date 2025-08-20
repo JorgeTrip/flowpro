@@ -27,7 +27,7 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
 
         const headerRow = worksheet.getRow(1);
         if (headerRow.values) {
-          columns = (headerRow.values as any[]).slice(1).map(v => v ? String(v) : '');
+          columns = (headerRow.values as (string | number | null | undefined)[]).slice(1).map(v => v ? String(v) : '');
         }
 
         worksheet.eachRow((row, rowNumber) => {
@@ -62,7 +62,7 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
       }
     };
 
-    reader.onerror = (error) => {
+    reader.onerror = () => {
       reject(new Error('Error al leer el archivo.'));
     };
 
