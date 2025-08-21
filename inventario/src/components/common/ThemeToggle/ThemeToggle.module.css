@@ -1,6 +1,0 @@
-.customSwitch {
-  transform: scale(1.75); /* Scale it up, 2 might be too large, adjust as needed */
-  transform-origin: left center; /* Adjust origin to keep it aligned nicely */
-  /* Add some margin if needed to prevent overlap with other elements after scaling */
-  /* margin-right: 10px; */ /* Example: if it scales and overlaps text to its right */
-}
