@@ -6,9 +6,19 @@ import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
 import { estimarDemanda } from '@/app/lib/demandEstimator';
 import DataPreviewTable from './DataPreviewTable';
 
+// Icono de tilde para confirmación visual
+const CheckIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="ml-2 h-5 w-5 flex-shrink-0 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+  </svg>
+);
+
 const SelectAsignacion = ({ label, columnas, value, onChange }: { label: string, columnas: string[], value: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+      {label}
+      {value && <CheckIcon />}
+    </label>
     <select
       value={value}
       onChange={onChange}
@@ -46,6 +56,15 @@ export function ConfigStep() {
     ventas: { productoId: '', cantidad: '', fecha: '', descripcion: '' },
     stock: { productoId: '', cantidad: '', stockReservado: '', descripcion: '' },
   });
+
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const ventasReady = mapeo.ventas.productoId && mapeo.ventas.cantidad && mapeo.ventas.fecha;
+    const stockReady = mapeo.stock.productoId && mapeo.stock.cantidad;
+    const descripcionReady = mapeo.ventas.descripcion || mapeo.stock.descripcion;
+    setIsReady(!!(ventasReady && stockReady && descripcionReady));
+  }, [mapeo]);
 
   useEffect(() => {
     const findDefaultColumn = (columns: string[], keywords: string[]): string => {
@@ -92,10 +111,8 @@ export function ConfigStep() {
   };
 
   const handleAnalizar = () => {
-    if (!mapeo.ventas.productoId || !mapeo.ventas.cantidad || !mapeo.ventas.fecha ||
-        !mapeo.stock.productoId || !mapeo.stock.cantidad || !mapeo.stock.stockReservado ||
-        (!mapeo.ventas.descripcion && !mapeo.stock.descripcion)) {
-      setError('Debe asignar una columna para cada campo requerido. La descripción del producto debe mapearse en al menos uno de los archivos.');
+    if (!isReady) {
+      setError('Por favor, complete todos los campos de mapeo requeridos antes de continuar.');
       return;
     }
 
@@ -235,13 +252,32 @@ export function ConfigStep() {
         </div>
       </div>
 
-      <div className="mt-8 flex justify-end space-x-4">
-        <button onClick={() => setStep(1)} className="rounded-md bg-gray-200 px-4 py-2 font-semibold text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
-          Volver
-        </button>
-        <button onClick={handleAnalizar} className="rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400">
-          Realizar Análisis
-        </button>
+      <div className="mt-8">
+        <div className="flex items-center justify-end space-x-4">
+          <div className="flex-grow">
+            {isReady ? (
+              <div className="flex items-center justify-center rounded-md border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800 dark:border-green-700 dark:bg-green-900/20 dark:text-green-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Todo listo para continuar. Puede iniciar el análisis.
+              </div>
+            ) : (
+              <div className="flex items-center justify-center rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm font-medium text-yellow-800 dark:border-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300">
+                <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.636-1.21 2.85-1.21 3.486 0l5.58 10.622c.636 1.21-.472 2.779-1.743 2.779H4.42c-1.27 0-2.379-1.569-1.743-2.779l5.58-10.622zM10 14a1 1 0 110-2 1 1 0 010 2zm-1-4a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+                Faltan campos por asignar. Revise las asignaciones para continuar.
+              </div>
+            )}
+          </div>
+          <button onClick={() => setStep(1)} className="rounded-md bg-gray-200 px-4 py-2 font-semibold text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
+            Volver
+          </button>
+          <button onClick={handleAnalizar} disabled={!isReady} className="rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400 dark:disabled:bg-gray-500">
+            Realizar Análisis
+          </button>
+        </div>
       </div>
     </div>
   );

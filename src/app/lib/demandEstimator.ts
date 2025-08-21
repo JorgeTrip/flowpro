@@ -30,77 +30,116 @@ export interface ResultadoItem {
   criticidad: 'alta' | 'media' | 'baja';
 }
 
+// Función para parsear fechas de Excel (numéricas o string)
+function parseExcelDate(value: any): Date | null {
+  if (!value) return null;
+
+  // Si es un número (formato de fecha serial de Excel)
+  if (typeof value === 'number') {
+    // Excel para Windows cuenta los días desde el 30/12/1899
+    const excelEpoch = new Date(1899, 11, 30);
+    const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Si es un string
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Si ya es un objeto Date
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value;
+  }
+
+  return null;
+}
+
 export function estimarDemanda(
   ventasData: ExcelRow[],
   stockData: ExcelRow[],
   mapeo: Mapeo
 ): ResultadoItem[] {
-  // 1. Encontrar el mes con más ventas
+  
+  // 1. Agrupar ventas por mes y encontrar el mes con más ventas
   const ventasPorMes = new Map<string, { totalVentas: number, data: ExcelRow[] }>();
+  
   ventasData.forEach(row => {
-    const fechaStr = row[mapeo.ventas.fecha];
+    const fechaCruda = row[mapeo.ventas.fecha];
+    const fecha = parseExcelDate(fechaCruda);
+
+    if (!fecha) {
+      // Opcional: loguear solo una vez para no llenar la consola
+      // console.warn(`Formato de fecha no reconocido: ${fechaCruda}`);
+      return;
+    }
+    
     const cantidad = Number(row[mapeo.ventas.cantidad]) || 0;
-    if (fechaStr && cantidad > 0) {
-      try {
-        const fecha = new Date(fechaStr);
-        if (isNaN(fecha.getTime())) return; // Ignorar fechas inválidas
-        const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-        
-        const mesData = ventasPorMes.get(mesKey) || { totalVentas: 0, data: [] };
-        mesData.totalVentas += cantidad;
-        mesData.data.push(row);
-        ventasPorMes.set(mesKey, mesData);
-      } catch (e) {
-        console.warn(`Formato de fecha inválido: ${fechaStr}`);
-      }
+    if (cantidad > 0) {
+      const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+      const mesData = ventasPorMes.get(mesKey) || { totalVentas: 0, data: [] };
+      mesData.totalVentas += cantidad;
+      mesData.data.push(row);
+      ventasPorMes.set(mesKey, mesData);
     }
   });
 
+  console.log(`Se encontraron ${ventasPorMes.size} meses con ventas.`);
+
+  // Encontrar el mejor mes
   let mejorMesData: ExcelRow[] = [];
   let maxVentas = 0;
-  ventasPorMes.forEach(({ totalVentas, data }) => {
+  ventasPorMes.forEach(({ totalVentas, data }, mes) => {
+    console.log(`Mes: ${mes}, Ventas: ${totalVentas}`);
     if (totalVentas > maxVentas) {
       maxVentas = totalVentas;
       mejorMesData = data;
     }
   });
 
-  // Si no hay datos de ventas válidos, usar todos los datos
-  const datosVentasAnalizar = mejorMesData.length > 0 ? mejorMesData : ventasData;
-  // Crear mapas para stock y descripciones
+  console.log(`El mejor mes tuvo ${maxVentas} ventas. Usando ${mejorMesData.length} registros para el análisis.`);
+
+  const datosVentasAnalizar = mejorMesData;
+
+  if (datosVentasAnalizar.length === 0) {
+    console.warn("No se encontraron datos de ventas válidos para analizar después de agrupar por mes.");
+    return []; // Retornar vacío si no hay datos para el mejor mes
+  }
+
+  // 2. Mapear stock
   const stockMap = new Map<string | number, { stock: number; stockReservado: number; descripcion: string }>();
-  
   stockData.forEach(row => {
     const productoId = row[mapeo.stock.productoId];
-    const stock = Number(row[mapeo.stock.cantidad]) || 0;
-    const stockReservado = mapeo.stock.stockReservado ? Number(row[mapeo.stock.stockReservado]) || 0 : 0;
-    const descripcion = mapeo.stock.descripcion ? String(row[mapeo.stock.descripcion] || '') : '';
-    
     if (productoId) {
-      stockMap.set(productoId, { stock, stockReservado, descripcion });
-    }
-  });
-
-  // 2. Agrupar ventas del mejor mes por producto
-  const ventasMap = new Map<string | number, { venta: number; descripcion: string }>();
-  
-  datosVentasAnalizar.forEach(row => {
-    const productoId = row[mapeo.ventas.productoId];
-    const cantidad = Number(row[mapeo.ventas.cantidad]) || 0;
-    const descripcion = mapeo.ventas.descripcion ? String(row[mapeo.ventas.descripcion] || '') : '';
-    
-    if (productoId && cantidad > 0) {
-      const existing = ventasMap.get(productoId);
-      ventasMap.set(productoId, {
-        venta: (existing?.venta || 0) + cantidad,
-        descripcion: descripcion || existing?.descripcion || ''
+      stockMap.set(productoId, {
+        stock: Number(row[mapeo.stock.cantidad]) || 0,
+        stockReservado: mapeo.stock.stockReservado ? Number(row[mapeo.stock.stockReservado]) || 0 : 0,
+        descripcion: mapeo.stock.descripcion ? String(row[mapeo.stock.descripcion] || '') : ''
       });
     }
   });
 
-  const resultados: ResultadoItem[] = [];
+  // 3. Agrupar ventas del mejor mes por producto
+  const ventasMap = new Map<string | number, { venta: number; descripcion: string }>();
+  datosVentasAnalizar.forEach(row => {
+    const productoId = row[mapeo.ventas.productoId];
+    if (productoId) {
+      const cantidad = Number(row[mapeo.ventas.cantidad]) || 0;
+      const existing = ventasMap.get(productoId) || { venta: 0, descripcion: '' };
+      ventasMap.set(productoId, {
+        venta: existing.venta + cantidad,
+        descripcion: (mapeo.ventas.descripcion ? String(row[mapeo.ventas.descripcion] || '') : '') || existing.descripcion
+      });
+    }
+  });
 
-  // Procesar cada producto
+  // 4. Procesar resultados
+  const resultados: ResultadoItem[] = [];
   ventasMap.forEach(({ venta, descripcion: ventaDescripcion }, productoId) => {
     const stockInfo = stockMap.get(productoId);
     const stock = stockInfo?.stock || 0;
@@ -108,36 +147,25 @@ export function estimarDemanda(
     const stockNeto = Math.max(0, stock - stockReservado);
     const descripcion = stockInfo?.descripcion || ventaDescripcion || `Producto ${productoId}`;
     
-    // La 'venta' ya es la venta mensual porque filtramos por el mejor mes
     const ventaMensual = venta;
-    
-    // Calcular meses de cobertura
     const mesesCobertura = ventaMensual > 0 ? Math.round(stockNeto / ventaMensual) : 999;
     
-    // Determinar criticidad basada en el umbral de 4 meses
     let criticidad: 'alta' | 'media' | 'baja';
-    if (mesesCobertura < 4) {
-      criticidad = 'alta';
-    } else if (mesesCobertura === 4) {
-      criticidad = 'media';
-    } else {
-      criticidad = 'baja';
-    }
+    if (mesesCobertura < 4) criticidad = 'alta';
+    else if (mesesCobertura === 4) criticidad = 'media';
+    else criticidad = 'baja';
     
-    // Calcular demanda insatisfecha basada en stock neto
     const demandaInsatisfecha = Math.max(0, ventaMensual * 4 - stockNeto);
     
-    // Generar sugerencia
     let sugerencia = '';
-    if (mesesCobertura < 4) {
-      const faltante = Math.ceil(ventaMensual * 4 - stockNeto);
-      sugerencia = `CRÍTICO: Comprar ${faltante} unidades. Stock para ${mesesCobertura} meses.`;
-    } else if (mesesCobertura === 4) {
+    if (criticidad === 'alta') {
+      sugerencia = `CRÍTICO: Comprar ${Math.ceil(demandaInsatisfecha)} unidades. Cobertura para ${mesesCobertura} meses.`;
+    } else if (criticidad === 'media') {
       sugerencia = `ATENCIÓN: Stock justo para 4 meses. Monitorear.`;
     } else if (mesesCobertura > 12) {
-      sugerencia = `Exceso de stock. Stock para ${mesesCobertura} meses.`;
+      sugerencia = `Exceso de stock. Cobertura para ${mesesCobertura} meses.`;
     } else {
-      sugerencia = `Stock adecuado para ${mesesCobertura} meses.`;
+      sugerencia = `Stock adecuado. Cobertura para ${mesesCobertura} meses.`;
     }
 
     resultados.push({
@@ -154,10 +182,10 @@ export function estimarDemanda(
     });
   });
 
-  // Ordenar por criticidad (más crítico primero)
+  // 5. Ordenar resultados
   return resultados.sort((a, b) => {
+    const orden = { 'alta': 0, 'media': 1, 'baja': 2 };
     if (a.criticidad !== b.criticidad) {
-      const orden = { 'alta': 0, 'media': 1, 'baja': 2 };
       return orden[a.criticidad] - orden[b.criticidad];
     }
     return a.mesesCobertura - b.mesesCobertura;
