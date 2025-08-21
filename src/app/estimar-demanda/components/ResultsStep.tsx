@@ -5,37 +5,31 @@ import { useStoreWithEqualityFn } from 'zustand/traditional';
 import { useEstimarDemandaStore, EstimarDemandaState } from '@/app/stores/estimarDemandaStore';
 import { shallow } from 'zustand/shallow';
 import { ResultadoItem, getCriticalityColor, Criticidad } from '@/app/lib/demandEstimator';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { RefreshCwIcon, Loader2 } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { RefreshCwIcon, Loader2, FileDownIcon } from 'lucide-react';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
-const DemandaStockChart = ({ data }: { data: ResultadoItem[] }) => (
-  <ResponsiveContainer width="100%" height={400}>
+const DemandaStockChart = ({ data }: { data: any[] }) => (
+  <ResponsiveContainer width="100%" height={300}>
     <BarChart data={data}>
       <CartesianGrid strokeDasharray="3 3" />
-      <XAxis 
-        dataKey="descripcion" 
-        angle={-45}
-        textAnchor="end"
-        height={100}
-        interval={0}
-      />
-      <YAxis />
+      <XAxis dataKey="name" />
+      <YAxis allowDecimals={false} />
       <Tooltip
         contentStyle={{
           backgroundColor: 'rgba(31, 41, 55, 0.9)',
           borderColor: '#4b5563',
         }}
         labelStyle={{ color: '#f3f4f6' }}
-        formatter={(value, name, props) => [
-          value,
-          name,
-          `${props.payload.productoId} - ${props.payload.descripcion}`
-        ]}
       />
-      <Legend />
-      <Bar dataKey="venta" fill="#8884d8" name="Ventas Mensuales" />
-      <Bar dataKey="stockNeto" fill="#82ca9d" name="Stock Neto" />
+      <Bar dataKey="count" name="N° de Productos">
+        <LabelList dataKey="count" position="insideTop" fill="#fff" fontSize={12} fontWeight="bold" />
+        {data.map((entry, index) => (
+          <Cell key={`cell-${index}`} fill={entry.fill} />
+        ))}
+      </Bar>
     </BarChart>
   </ResponsiveContainer>
 );
@@ -45,14 +39,13 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead className="bg-gray-50 dark:bg-gray-800">
         <tr>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Descripción</th>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">ID Producto</th>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Ventas Anuales</th>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Stock Actual</th>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Stock Reservado</th>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Stock Neto</th>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Meses Cobertura</th>
-          <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">Sugerencia</th>
+          <th scope="col" className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Descripción</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">ID Producto</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Venta Mensual (Mes Pico)</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Actual</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Reservado</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Neto</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Meses Cobertura</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
@@ -60,25 +53,25 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
           const criticalityClass = getCriticalityColor(item.criticidad);
           return (
             <tr key={`${item.productoId}-${index}`} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${criticalityClass}`}>
-              <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate" title={item.descripcion}>
+              <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white w-64 break-words">
                 {item.descripcion}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-700 dark:text-gray-300">
+              <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-900 dark:text-white text-center">
                 {item.productoId}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
                 {item.venta.toLocaleString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
                 {item.stock.toLocaleString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
                 {item.stockReservado.toLocaleString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-700 dark:text-gray-200">
+              <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center">
                 {item.stockNeto.toLocaleString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm font-bold">
+              <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-center">
                 <span className={`px-2 py-1 rounded-full text-xs ${
                   item.criticidad === 'alta' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
                   item.criticidad === 'media' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
@@ -86,9 +79,6 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
                 }`}>
                   {item.mesesCobertura === 999 ? '∞' : item.mesesCobertura} meses
                 </span>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-sm">
-                {item.sugerencia}
               </td>
             </tr>
           );
@@ -111,59 +101,82 @@ export function ResultsStep() {
     shallow
   );
 
-  const chartData = [...(resultados || [])]
-    .sort((a, b) => {
-      // Ordenar por criticidad primero, luego por meses de cobertura
-      if (a.criticidad !== b.criticidad) {
-        const orden: { [key in Criticidad]: number } = { 'alta': 0, 'media': 1, 'baja': 2 };
-        return orden[a.criticidad] - orden[b.criticidad];
-      }
-      return a.mesesCobertura - b.mesesCobertura;
-    })
-    .slice(0, 10);
+  const handleExport = async () => {
+    if (!resultados || resultados.length === 0) {
+      console.log("No hay datos para exportar.");
+      return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Análisis de Demanda');
+
+    worksheet.columns = [
+      { header: 'Descripción', key: 'descripcion', width: 40 },
+      { header: 'ID Producto', key: 'productoId', width: 20 },
+      { header: 'Venta Mensual (Mes Pico)', key: 'venta', width: 25 },
+      { header: 'Stock Actual', key: 'stock', width: 15 },
+      { header: 'Stock Reservado', key: 'stockReservado', width: 20 },
+      { header: 'Stock Neto', key: 'stockNeto', width: 15 },
+      { header: 'Meses Cobertura', key: 'mesesCobertura', width: 20 },
+      { header: 'Criticidad', key: 'criticidad', width: 15 },
+    ];
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2F75B5' }, // Blue
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+
+    resultados.forEach(item => {
+      worksheet.addRow({
+        ...item,
+        mesesCobertura: item.mesesCobertura === 999 ? '∞' : item.mesesCobertura,
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, 'analisis_demanda.xlsx');
+  };
+
+  const coverageData = (resultados || []).reduce((acc, item) => {
+    const coverage = Math.floor(item.mesesCobertura);
+    if (coverage < 1) acc[0].count++;
+    else if (coverage < 2) acc[1].count++;
+    else if (coverage < 3) acc[2].count++;
+    else if (coverage < 4) acc[3].count++;
+    else if (coverage === 4) acc[4].count++;
+    else acc[5].count++;
+    return acc;
+  }, [
+    { name: '0 meses', count: 0, fill: '#ef4444' }, // red-500
+    { name: '1 mes', count: 0, fill: '#ef4444' },
+    { name: '2 meses', count: 0, fill: '#ef4444' },
+    { name: '3 meses', count: 0, fill: '#ef4444' },
+    { name: '4 meses', count: 0, fill: '#facc15' }, // yellow-400
+    { name: '> 4 meses', count: 0, fill: '#22c55e' }, // green-500
+  ]);
 
   return (
     <div className="space-y-8">
       <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Paso 3: Resultados del Análisis</h3>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Visualice la comparación entre el stock actual y la demanda, y las sugerencias de compra.</p>
-        
-        <div className="mt-6">
-          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Top 10 Productos Más Críticos por Stock</h4>
-          <DemandaStockChart data={chartData} />
-        </div>
-        
-        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <h5 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Leyenda de Criticidad:</h5>
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 bg-red-100 border border-red-300 rounded"></span>
-              <span className="text-gray-700 dark:text-gray-300">Crítico (&lt; 4 meses)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></span>
-              <span className="text-gray-700 dark:text-gray-300">Atención (= 4 meses)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-4 h-4 bg-green-100 border border-green-300 rounded"></span>
-              <span className="text-gray-700 dark:text-gray-300">Adecuado (&gt; 4 meses)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Detalle del Análisis</h4>
-        <ResultsTable data={resultados || []} />
+        <p className="ml-2 text-sm text-gray-900 dark:text-gray-300">Visualice la comparación entre el stock actual y la demanda, y las sugerencias de compra.</p>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <h4 className="font-semibold text-gray-800 dark:text-gray-200">Acciones</h4>
         <div className="mt-4 flex flex-wrap items-center gap-4">
-          <button className="rounded-md bg-green-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-green-700">
+          <button onClick={handleExport} className="inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-800">
+            <FileDownIcon className="mr-2 h-5 w-5" />
             Exportar a Excel
           </button>
-                                                  <button onClick={reAnalizar} disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400 dark:disabled:bg-gray-500">
+          <button onClick={reAnalizar} disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400 dark:disabled:bg-gray-500">
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -176,11 +189,40 @@ export function ResultsStep() {
               </>
             )}
           </button>
-          <button onClick={reset} disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-gray-500 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50">
+          <button onClick={reset} disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-gray-500 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
             <ArrowPathIcon className="mr-2 h-5 w-5" />
             Realizar Nuevo Análisis
           </button>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-6">
+          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Distribución de Productos por Cobertura de Stock</h4>
+          <DemandaStockChart data={coverageData} />
+        </div>
+        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h5 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Leyenda de Criticidad:</h5>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-red-500 border border-red-700 rounded"></span>
+              <span className="text-gray-900 dark:text-gray-300">Crítico (&lt; 4 meses)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-yellow-400 border border-yellow-600 rounded"></span>
+              <span className="text-gray-900 dark:text-gray-300">Atención (= 4 meses)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-4 h-4 bg-green-500 border border-green-700 rounded"></span>
+              <span className="text-gray-900 dark:text-gray-300">Adecuado (&gt; 4 meses)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Detalle del Análisis</h4>
+        <ResultsTable data={resultados || []} />
       </div>
     </div>
   );
