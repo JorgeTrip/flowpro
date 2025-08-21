@@ -13,7 +13,7 @@ export function getCriticalityColor(criticidad: 'alta' | 'media' | 'baja'): stri
 }
 
 interface Mapeo {
-  ventas: { productoId: string; cantidad: string; descripcion?: string };
+  ventas: { productoId: string; cantidad: string; fecha: string; descripcion?: string };
   stock: { productoId: string; cantidad: string; stockReservado?: string; descripcion?: string };
 }
 
@@ -35,6 +35,38 @@ export function estimarDemanda(
   stockData: ExcelRow[],
   mapeo: Mapeo
 ): ResultadoItem[] {
+  // 1. Encontrar el mes con más ventas
+  const ventasPorMes = new Map<string, { totalVentas: number, data: ExcelRow[] }>();
+  ventasData.forEach(row => {
+    const fechaStr = row[mapeo.ventas.fecha];
+    const cantidad = Number(row[mapeo.ventas.cantidad]) || 0;
+    if (fechaStr && cantidad > 0) {
+      try {
+        const fecha = new Date(fechaStr);
+        if (isNaN(fecha.getTime())) return; // Ignorar fechas inválidas
+        const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+        
+        const mesData = ventasPorMes.get(mesKey) || { totalVentas: 0, data: [] };
+        mesData.totalVentas += cantidad;
+        mesData.data.push(row);
+        ventasPorMes.set(mesKey, mesData);
+      } catch (e) {
+        console.warn(`Formato de fecha inválido: ${fechaStr}`);
+      }
+    }
+  });
+
+  let mejorMesData: ExcelRow[] = [];
+  let maxVentas = 0;
+  ventasPorMes.forEach(({ totalVentas, data }) => {
+    if (totalVentas > maxVentas) {
+      maxVentas = totalVentas;
+      mejorMesData = data;
+    }
+  });
+
+  // Si no hay datos de ventas válidos, usar todos los datos
+  const datosVentasAnalizar = mejorMesData.length > 0 ? mejorMesData : ventasData;
   // Crear mapas para stock y descripciones
   const stockMap = new Map<string | number, { stock: number; stockReservado: number; descripcion: string }>();
   
@@ -49,10 +81,10 @@ export function estimarDemanda(
     }
   });
 
-  // Agrupar ventas por producto para obtener ventas mensuales
+  // 2. Agrupar ventas del mejor mes por producto
   const ventasMap = new Map<string | number, { venta: number; descripcion: string }>();
   
-  ventasData.forEach(row => {
+  datosVentasAnalizar.forEach(row => {
     const productoId = row[mapeo.ventas.productoId];
     const cantidad = Number(row[mapeo.ventas.cantidad]) || 0;
     const descripcion = mapeo.ventas.descripcion ? String(row[mapeo.ventas.descripcion] || '') : '';
@@ -76,8 +108,8 @@ export function estimarDemanda(
     const stockNeto = Math.max(0, stock - stockReservado);
     const descripcion = stockInfo?.descripcion || ventaDescripcion || `Producto ${productoId}`;
     
-    // Calcular venta mensual (asumiendo que los datos son anuales)
-    const ventaMensual = venta / 12;
+    // La 'venta' ya es la venta mensual porque filtramos por el mejor mes
+    const ventaMensual = venta;
     
     // Calcular meses de cobertura
     const mesesCobertura = ventaMensual > 0 ? Math.round(stockNeto / ventaMensual) : 999;

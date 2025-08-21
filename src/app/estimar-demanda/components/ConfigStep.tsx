@@ -1,7 +1,7 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
 import { estimarDemanda } from '@/app/lib/demandEstimator';
 import DataPreviewTable from './DataPreviewTable';
@@ -43,11 +43,38 @@ export function ConfigStep() {
   } = useEstimarDemandaStore();
 
   const [mapeo, setMapeo] = useState({
-    ventas: { productoId: '', cantidad: '', descripcion: '' },
+    ventas: { productoId: '', cantidad: '', fecha: '', descripcion: '' },
     stock: { productoId: '', cantidad: '', stockReservado: '', descripcion: '' },
   });
 
-  const handleMapeoChange = (fileType: 'ventas' | 'stock', campo: 'productoId' | 'cantidad' | 'descripcion' | 'stockReservado', valor: string) => {
+  useEffect(() => {
+    const findDefaultColumn = (columns: string[], keywords: string[]): string => {
+      for (const keyword of keywords) {
+        const foundColumn = columns.find(col => col.toLowerCase().includes(keyword.toLowerCase()));
+        if (foundColumn) return foundColumn;
+      }
+      return '';
+    };
+
+    if (ventasColumnas.length > 0 || stockColumnas.length > 0) {
+      setMapeo(prev => ({
+        ventas: {
+          productoId: prev.ventas.productoId || findDefaultColumn(ventasColumnas, ['cod', 'cód', 'cod.', 'cód.']),
+          cantidad: prev.ventas.cantidad || findDefaultColumn(ventasColumnas, ['control stock', 'cantidad']),
+          fecha: prev.ventas.fecha || findDefaultColumn(ventasColumnas, ['fecha']),
+          descripcion: prev.ventas.descripcion || findDefaultColumn(ventasColumnas, ['descripcion', 'descripción']),
+        },
+        stock: {
+          productoId: prev.stock.productoId || findDefaultColumn(stockColumnas, ['cod', 'cód', 'cod.', 'cód.']),
+          cantidad: prev.stock.cantidad || findDefaultColumn(stockColumnas, ['saldo control stock', 'stock', 'saldo']),
+          stockReservado: prev.stock.stockReservado || findDefaultColumn(stockColumnas, ['comprometida', 'reservado']),
+          descripcion: prev.stock.descripcion || findDefaultColumn(stockColumnas, ['descripcion', 'descripción']),
+        },
+      }));
+    }
+  }, [ventasColumnas, stockColumnas, setMapeo]);
+
+  const handleMapeoChange = (fileType: 'ventas' | 'stock', campo: 'productoId' | 'cantidad' | 'descripcion' | 'stockReservado' | 'fecha', valor: string) => {
     setMapeo(prev => {
       const newState = {
         ...prev,
@@ -65,7 +92,7 @@ export function ConfigStep() {
   };
 
   const handleAnalizar = () => {
-    if (!mapeo.ventas.productoId || !mapeo.ventas.cantidad || 
+    if (!mapeo.ventas.productoId || !mapeo.ventas.cantidad || !mapeo.ventas.fecha ||
         !mapeo.stock.productoId || !mapeo.stock.cantidad || !mapeo.stock.stockReservado ||
         (!mapeo.ventas.descripcion && !mapeo.stock.descripcion)) {
       setError('Debe asignar una columna para cada campo requerido. La descripción del producto debe mapearse en al menos uno de los archivos.');
@@ -113,6 +140,7 @@ export function ConfigStep() {
                   title="Previsualización de Ventas"
                   previewData={ventasPreviewData}
                   columns={ventasColumnas}
+                  highlightedColumns={Object.values(mapeo.ventas)}
                 />
               )}
             </div>
@@ -129,6 +157,12 @@ export function ConfigStep() {
                   columnas={ventasColumnas}
                   value={mapeo.ventas.cantidad}
                   onChange={(e) => handleMapeoChange('ventas', 'cantidad', e.target.value)}
+                />
+                <SelectAsignacion
+                  label="Fecha"
+                  columnas={ventasColumnas}
+                  value={mapeo.ventas.fecha}
+                  onChange={(e) => handleMapeoChange('ventas', 'fecha', e.target.value)}
                 />
                 <div className={mapeo.stock.descripcion ? 'opacity-50 pointer-events-none' : ''}>
                   <SelectAsignacion
@@ -158,6 +192,7 @@ export function ConfigStep() {
                   title="Previsualización de Stock"
                   previewData={stockPreviewData}
                   columns={stockColumnas}
+                  highlightedColumns={Object.values(mapeo.stock)}
                 />
               )}
             </div>

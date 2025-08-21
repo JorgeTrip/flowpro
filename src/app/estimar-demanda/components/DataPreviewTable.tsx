@@ -8,9 +8,10 @@ interface DataPreviewTableProps {
   previewData: ExcelRow[];
   columns: string[];
   title: string;
+  highlightedColumns?: string[];
 }
 
-const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ previewData, columns, title }) => {
+const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ previewData, columns, title, highlightedColumns = [] }) => {
   if (!previewData || previewData.length === 0) {
     return null;
   }
@@ -29,7 +30,7 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ previewData, column
                 <th
                   key={index}
                   scope="col"
-                  className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  className={`px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider ${highlightedColumns.includes(header) ? 'bg-green-100 dark:bg-green-800' : ''}`}
                 >
                   {header}
                 </th>
@@ -40,7 +41,7 @@ const DataPreviewTable: React.FC<DataPreviewTableProps> = ({ previewData, column
             {previewData.map((row, rowIndex) => (
               <tr key={rowIndex} className="hover:bg-gray-100 dark:hover:bg-gray-600">
                 {displayColumns.map((header, colIndex) => (
-                  <td key={colIndex} className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
+                  <td key={colIndex} className={`px-4 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 ${highlightedColumns.includes(header) ? 'bg-green-100 dark:bg-green-800' : ''}`}>
                     {row[header] !== undefined && row[header] !== null ? String(row[header]) : ''}
                   </td>
                 ))}

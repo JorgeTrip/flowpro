@@ -10,6 +10,7 @@ interface Configuracion {
     ventas: {
       productoId: string;
       cantidad: string;
+      fecha: string;
       descripcion?: string;
     };
     stock: {
