@@ -2,10 +2,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useEstimarDemandaStore, ExcelRow } from '@/app/stores/estimarDemandaStore';
+import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
 import { estimarDemanda } from '@/app/lib/demandEstimator';
 import DataPreviewTable from './DataPreviewTable';
-import readXlsxFile from 'read-excel-file';
 
 // Icono de tilde para confirmación visual
 const CheckIcon = () => (
@@ -51,8 +50,6 @@ export function ConfigStep() {
     setError,
     ventasPreviewData,
     stockPreviewData,
-    setVentasData,
-    setStockData,
   } = useEstimarDemandaStore();
 
   const [mapeo, setMapeo] = useState({
