@@ -1,9 +1,13 @@
-// © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
+// 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
-import { ResultadoItem, getCriticalityColor } from '@/app/lib/demandEstimator';
+import { useStoreWithEqualityFn } from 'zustand/traditional';
+import { useEstimarDemandaStore, EstimarDemandaState } from '@/app/stores/estimarDemandaStore';
+import { shallow } from 'zustand/shallow';
+import { ResultadoItem, getCriticalityColor, Criticidad } from '@/app/lib/demandEstimator';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { RefreshCwIcon, Loader2 } from 'lucide-react';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const DemandaStockChart = ({ data }: { data: ResultadoItem[] }) => (
   <ResponsiveContainer width="100%" height={400}>
@@ -95,13 +99,23 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
 );
 
 export function ResultsStep() {
-  const { resultados, reset } = useEstimarDemandaStore();
+  const { resultados, isLoading, error, reset, reAnalizar } = useStoreWithEqualityFn(
+    useEstimarDemandaStore,
+    (state: EstimarDemandaState) => ({
+      resultados: state.resultados,
+      isLoading: state.isLoading,
+      error: state.error,
+      reset: state.reset,
+      reAnalizar: state.reAnalizar,
+    }),
+    shallow
+  );
 
   const chartData = [...(resultados || [])]
     .sort((a, b) => {
       // Ordenar por criticidad primero, luego por meses de cobertura
       if (a.criticidad !== b.criticidad) {
-        const orden = { 'alta': 0, 'media': 1, 'baja': 2 };
+        const orden: { [key in Criticidad]: number } = { 'alta': 0, 'media': 1, 'baja': 2 };
         return orden[a.criticidad] - orden[b.criticidad];
       }
       return a.mesesCobertura - b.mesesCobertura;
@@ -149,7 +163,21 @@ export function ResultsStep() {
           <button className="rounded-md bg-green-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-green-700">
             Exportar a Excel
           </button>
-          <button onClick={reset} className="rounded-md bg-gray-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-gray-700">
+                                                  <button onClick={reAnalizar} disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400 dark:disabled:bg-gray-500">
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Analizando...
+              </>
+            ) : (
+              <>
+                <RefreshCwIcon className="mr-2 h-5 w-5" />
+                Refrescar Análisis
+              </>
+            )}
+          </button>
+          <button onClick={reset} disabled={isLoading} className="inline-flex items-center justify-center rounded-md bg-gray-500 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50">
+            <ArrowPathIcon className="mr-2 h-5 w-5" />
             Realizar Nuevo Análisis
           </button>
         </div>

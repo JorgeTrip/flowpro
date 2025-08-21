@@ -1,8 +1,12 @@
 // © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import { create } from 'zustand';
+import { CellValue } from 'read-excel-file';
+import { estimarDemanda } from '@/app/lib/demandEstimator';
+
+export type { CellValue };
 
 export interface ExcelRow {
-  [key: string]: string | number;
+  [key: string]: CellValue;
 }
 
 interface Configuracion {
@@ -35,7 +39,7 @@ interface ResultadoItem {
   criticidad: 'alta' | 'media' | 'baja';
 }
 
-interface EstimarDemandaState {
+export interface EstimarDemandaState {
   // State
   step: number;
   ventasFile: File | null;
@@ -61,6 +65,7 @@ interface EstimarDemandaState {
   setResultados: (resultados: ResultadoItem[]) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  reAnalizar: () => void;
   reset: () => void;
 }
 
@@ -80,7 +85,7 @@ const initialState = {
   error: null,
 };
 
-export const useEstimarDemandaStore = create<EstimarDemandaState>()((set) => ({
+export const useEstimarDemandaStore = create<EstimarDemandaState>()((set, get) => ({
   ...initialState,
   setStep: (step) => set({ step }),
   setVentasFile: (file) => set({ ventasFile: file }),
@@ -91,5 +96,20 @@ export const useEstimarDemandaStore = create<EstimarDemandaState>()((set) => ({
   setResultados: (resultados) => set({ resultados }),
   setIsLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  reAnalizar: () => {
+    const { ventasData, stockData, configuracion } = get();
+    if (!ventasData.length || !stockData.length || !configuracion?.mapeo) {
+      set({ error: 'No hay datos o configuración para re-analizar.' });
+      return;
+    }
+    set({ isLoading: true, error: null });
+    try {
+      const nuevosResultados = estimarDemanda(ventasData, stockData, configuracion.mapeo);
+      set({ resultados: nuevosResultados, isLoading: false });
+    } catch (err) {
+      console.error('Error durante el re-análisis:', err);
+      set({ error: err instanceof Error ? err.message : 'Ocurrió un error al re-analizar.', isLoading: false });
+    }
+  },
   reset: () => set(initialState),
 }));

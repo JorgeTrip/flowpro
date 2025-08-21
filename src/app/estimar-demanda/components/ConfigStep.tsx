@@ -2,9 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
+import { useEstimarDemandaStore, ExcelRow } from '@/app/stores/estimarDemandaStore';
 import { estimarDemanda } from '@/app/lib/demandEstimator';
 import DataPreviewTable from './DataPreviewTable';
+import readXlsxFile from 'read-excel-file';
 
 // Icono de tilde para confirmación visual
 const CheckIcon = () => (
@@ -50,6 +51,8 @@ export function ConfigStep() {
     setError,
     ventasPreviewData,
     stockPreviewData,
+    setVentasData,
+    setStockData,
   } = useEstimarDemandaStore();
 
   const [mapeo, setMapeo] = useState({
@@ -79,7 +82,7 @@ export function ConfigStep() {
       setMapeo(prev => ({
         ventas: {
           productoId: prev.ventas.productoId || findDefaultColumn(ventasColumnas, ['cod', 'cód', 'cod.', 'cód.']),
-          cantidad: prev.ventas.cantidad || findDefaultColumn(ventasColumnas, ['control stock', 'cantidad']),
+          cantidad: prev.ventas.cantidad || findDefaultColumn(ventasColumnas, ['Cantidad Control Stock', 'control stock', 'cantidad']),
           fecha: prev.ventas.fecha || findDefaultColumn(ventasColumnas, ['fecha']),
           descripcion: prev.ventas.descripcion || findDefaultColumn(ventasColumnas, ['descripcion', 'descripción']),
         },
@@ -139,6 +142,42 @@ export function ConfigStep() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFileChange = (file: File, fileType: 'ventas' | 'stock') => {
+    setIsLoading(true);
+    setError(null);
+
+    readXlsxFile(file).then((rows) => {
+      if (rows.length < 2) {
+        setError(`El archivo ${file.name} debe tener al menos una fila de encabezado y una de datos.`);
+        setIsLoading(false);
+        return;
+      }
+
+      const header = rows[0].map(String);
+      const data: ExcelRow[] = rows.slice(1).map(row => {
+        const rowData: ExcelRow = {};
+        header.forEach((key, index) => {
+          rowData[key] = row[index];
+        });
+        return rowData;
+      });
+
+      if (fileType === 'ventas') {
+        setVentasData(data, header, data.slice(0, 5));
+      } else {
+        setStockData(data, header, data.slice(0, 5));
+      }
+
+      setError(null);
+      setIsLoading(false);
+
+    }).catch((err: unknown) => {
+      console.error(`Error al procesar el archivo ${file.name}:`, err);
+      setError(err instanceof Error ? `Error al procesar: ${err.message}` : 'Ocurrió un error desconocido al leer el archivo.');
+      setIsLoading(false);
+    });
   };
 
   return (
