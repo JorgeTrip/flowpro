@@ -4,14 +4,20 @@
 import { useStoreWithEqualityFn } from 'zustand/traditional';
 import { useEstimarDemandaStore, EstimarDemandaState } from '@/app/stores/estimarDemandaStore';
 import { shallow } from 'zustand/shallow';
-import { ResultadoItem, getCriticalityColor, Criticidad } from '@/app/lib/demandEstimator';
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { ResultadoItem, getCriticalityColor } from '@/app/lib/demandEstimator';
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { RefreshCwIcon, Loader2, FileDownIcon } from 'lucide-react';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
-const DemandaStockChart = ({ data }: { data: any[] }) => (
+interface ChartData {
+  name: string;
+  count: number;
+  fill: string;
+}
+
+const DemandaStockChart = ({ data }: { data: ChartData[] }) => (
   <ResponsiveContainer width="100%" height={300}>
     <BarChart data={data}>
       <CartesianGrid strokeDasharray="3 3" />
@@ -89,12 +95,11 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
 );
 
 export function ResultsStep() {
-  const { resultados, isLoading, error, reset, reAnalizar } = useStoreWithEqualityFn(
+  const { resultados, isLoading, reset, reAnalizar } = useStoreWithEqualityFn(
     useEstimarDemandaStore,
     (state: EstimarDemandaState) => ({
       resultados: state.resultados,
       isLoading: state.isLoading,
-      error: state.error,
       reset: state.reset,
       reAnalizar: state.reAnalizar,
     }),

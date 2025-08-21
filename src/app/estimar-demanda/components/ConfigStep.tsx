@@ -144,41 +144,6 @@ export function ConfigStep() {
     }
   };
 
-  const handleFileChange = (file: File, fileType: 'ventas' | 'stock') => {
-    setIsLoading(true);
-    setError(null);
-
-    readXlsxFile(file).then((rows) => {
-      if (rows.length < 2) {
-        setError(`El archivo ${file.name} debe tener al menos una fila de encabezado y una de datos.`);
-        setIsLoading(false);
-        return;
-      }
-
-      const header = rows[0].map(String);
-      const data: ExcelRow[] = rows.slice(1).map(row => {
-        const rowData: ExcelRow = {};
-        header.forEach((key, index) => {
-          rowData[key] = row[index];
-        });
-        return rowData;
-      });
-
-      if (fileType === 'ventas') {
-        setVentasData(data, header, data.slice(0, 5));
-      } else {
-        setStockData(data, header, data.slice(0, 5));
-      }
-
-      setError(null);
-      setIsLoading(false);
-
-    }).catch((err: unknown) => {
-      console.error(`Error al procesar el archivo ${file.name}:`, err);
-      setError(err instanceof Error ? `Error al procesar: ${err.message}` : 'Ocurrió un error desconocido al leer el archivo.');
-      setIsLoading(false);
-    });
-  };
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
