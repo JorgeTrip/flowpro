@@ -10,20 +10,28 @@ interface Configuracion {
     ventas: {
       productoId: string;
       cantidad: string;
+      descripcion?: string;
     };
     stock: {
       productoId: string;
       cantidad: string;
+      stockReservado?: string;
+      descripcion?: string;
     };
   };
 }
 
 interface ResultadoItem {
   productoId: string | number;
+  descripcion: string;
   venta: number;
   stock: number;
+  stockReservado: number;
+  stockNeto: number;
+  mesesCobertura: number;
   demandaInsatisfecha: number;
   sugerencia: string;
+  criticidad: 'alta' | 'media' | 'baja';
 }
 
 interface EstimarDemandaState {

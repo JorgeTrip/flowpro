@@ -43,20 +43,32 @@ export function ConfigStep() {
   } = useEstimarDemandaStore();
 
   const [mapeo, setMapeo] = useState({
-    ventas: { productoId: '', cantidad: '' },
-    stock: { productoId: '', cantidad: '' },
+    ventas: { productoId: '', cantidad: '', descripcion: '' },
+    stock: { productoId: '', cantidad: '', stockReservado: '', descripcion: '' },
   });
 
-  const handleMapeoChange = (fileType: 'ventas' | 'stock', campo: 'productoId' | 'cantidad', valor: string) => {
-    setMapeo(prev => ({
-      ...prev,
-      [fileType]: { ...prev[fileType], [campo]: valor },
-    }));
+  const handleMapeoChange = (fileType: 'ventas' | 'stock', campo: 'productoId' | 'cantidad' | 'descripcion' | 'stockReservado', valor: string) => {
+    setMapeo(prev => {
+      const newState = {
+        ...prev,
+        [fileType]: { ...prev[fileType], [campo]: valor },
+      };
+
+      // Si se mapea la descripción en un archivo, se des-mapea en el otro.
+      if (campo === 'descripcion' && valor) {
+        const otroFileType = fileType === 'ventas' ? 'stock' : 'ventas';
+        newState[otroFileType].descripcion = '';
+      }
+
+      return newState;
+    });
   };
 
   const handleAnalizar = () => {
-    if (!mapeo.ventas.productoId || !mapeo.ventas.cantidad || !mapeo.stock.productoId || !mapeo.stock.cantidad) {
-      setError('Debe asignar una columna para cada campo requerido en ambos archivos.');
+    if (!mapeo.ventas.productoId || !mapeo.ventas.cantidad || 
+        !mapeo.stock.productoId || !mapeo.stock.cantidad || !mapeo.stock.stockReservado ||
+        (!mapeo.ventas.descripcion && !mapeo.stock.descripcion)) {
+      setError('Debe asignar una columna para cada campo requerido. La descripción del producto debe mapearse en al menos uno de los archivos.');
       return;
     }
 
@@ -105,7 +117,7 @@ export function ConfigStep() {
               )}
             </div>
             <div>
-              <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <SelectAsignacion
                   label="ID de Producto (SKU)"
                   columnas={ventasColumnas}
@@ -118,6 +130,19 @@ export function ConfigStep() {
                   value={mapeo.ventas.cantidad}
                   onChange={(e) => handleMapeoChange('ventas', 'cantidad', e.target.value)}
                 />
+                <div className={mapeo.stock.descripcion ? 'opacity-50 pointer-events-none' : ''}>
+                  <SelectAsignacion
+                    label="Descripción del Producto"
+                    columnas={ventasColumnas}
+                    value={mapeo.ventas.descripcion}
+                    onChange={(e) => handleMapeoChange('ventas', 'descripcion', e.target.value)}
+                  />
+                  {mapeo.stock.descripcion && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Ya mapeado en archivo de stock
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -137,7 +162,7 @@ export function ConfigStep() {
               )}
             </div>
             <div>
-              <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <SelectAsignacion
                   label="ID de Producto (SKU)"
                   columnas={stockColumnas}
@@ -150,6 +175,25 @@ export function ConfigStep() {
                   value={mapeo.stock.cantidad}
                   onChange={(e) => handleMapeoChange('stock', 'cantidad', e.target.value)}
                 />
+                <SelectAsignacion
+                  label="Stock Reservado"
+                  columnas={stockColumnas}
+                  value={mapeo.stock.stockReservado}
+                  onChange={(e) => handleMapeoChange('stock', 'stockReservado', e.target.value)}
+                />
+                <div className={mapeo.ventas.descripcion ? 'opacity-50 pointer-events-none' : ''}>
+                  <SelectAsignacion
+                    label="Descripción del Producto"
+                    columnas={stockColumnas}
+                    value={mapeo.stock.descripcion}
+                    onChange={(e) => handleMapeoChange('stock', 'descripcion', e.target.value)}
+                  />
+                  {mapeo.ventas.descripcion && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Ya mapeado en archivo de ventas
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
