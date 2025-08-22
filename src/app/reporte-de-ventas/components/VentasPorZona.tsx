@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, TooltipProps } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
@@ -36,9 +36,27 @@ export const VentasPorZona = ({ ventasPorZona, cantidadesPorZona }: {
       .filter(item => item.value > 0);
   }, [metric, ventasPorZona, cantidadesPorZona]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  interface PieLabelRenderProps {
+  cx: number;
+  cy: number;
+  midAngle?: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent?: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: { 
+    payload: { name: string; value: number };
+    name: string;
+    value: number;
+  }[];
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
-      const { name, value } = payload[0];
+      const { name, value } = payload[0].payload;
       return (
         <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">
           <p className="font-bold">{`${name}: ${metric === 'importe' ? formatCurrency(value) : formatQuantity(value)}`}</p>
@@ -71,7 +89,7 @@ export const VentasPorZona = ({ ventasPorZona, cantidadesPorZona }: {
             outerRadius={150}
             fill="#8884d8"
             dataKey="value"
-            label={({ cx, cy, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }) => {
+            label={({ cx, cy, midAngle = 0, innerRadius, outerRadius, percent = 0 }: PieLabelRenderProps) => {
               const RADIAN = Math.PI / 180;
               const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
               const x = cx + radius * Math.cos(-midAngle * RADIAN);

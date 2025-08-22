@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector, TooltipProps } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
@@ -11,8 +11,23 @@ const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(
 
 const COLORS = ['#3b82f6', '#10b981']; // Azul y Verde
 
-const renderActiveShape = (props: any) => {
-    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, metric } = props;
+interface ActiveShapeProps {
+    cx?: number;
+    cy?: number;
+    innerRadius?: number;
+    outerRadius?: number;
+    startAngle?: number;
+    endAngle?: number;
+    fill?: string;
+    payload?: { name: string; value: number };
+    percent?: number;
+    metric: 'importe' | 'cantidad';
+}
+
+const renderActiveShape = (props: ActiveShapeProps) => {
+    const { cx = 0, cy = 0, innerRadius = 0, outerRadius = 0, startAngle = 0, endAngle = 0, fill = '#8884d8', payload, percent = 0, metric } = props;
+
+    if (!payload) return <g />;
 
   return (
     <g>
@@ -53,7 +68,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
     }));
   }, [metric, ventasPorRubro, cantidadesPorRubro]);
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 
@@ -61,7 +76,12 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
     setActiveIndex(undefined);
   };
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: { name: string; value: number }[];
+  }
+
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">
@@ -88,8 +108,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
       <ResponsiveContainer width="100%" height={400}>
         <PieChart>
           <Pie
-            activeIndex={activeIndex}
-            activeShape={(props: any) => renderActiveShape({ ...props, metric })}
+            {...{ activeIndex, activeShape: (props: any) => renderActiveShape({ ...props, metric }) } as any}
             data={data}
             cx="50%"
             cy="50%"
@@ -99,8 +118,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
             dataKey="value"
             onMouseEnter={onPieEnter}
             onMouseLeave={onPieLeave}
-            {...({} as any)} // Workaround for Recharts typing issue
-          >
+                      >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}

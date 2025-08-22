@@ -3,13 +3,7 @@
 'use client';
 
 import { useEstimarDemandaStore, ExcelRow } from '@/app/stores/estimarDemandaStore';
-import { FileUpload } from '@/app/components/shared/FileUpload';
-
-interface FileLoadData {
-  data: ExcelRow[];
-  columns: string[];
-  previewData: ExcelRow[];
-}
+import { FileUpload, ProcessedExcelData } from '@/app/components/shared/FileUpload';
 
 export function UploadStep() {
   const {
@@ -24,12 +18,12 @@ export function UploadStep() {
     setStep,
   } = useEstimarDemandaStore();
 
-  const handleVentasLoad = (file: File, { data, columns, previewData }: FileLoadData) => {
+  const handleVentasLoad = (file: File, { data, columns, previewData }: ProcessedExcelData<ExcelRow>) => {
     setVentasFile(file);
     setVentasData(data, columns, previewData);
   };
 
-  const handleStockLoad = (file: File, { data, columns, previewData }: FileLoadData) => {
+  const handleStockLoad = (file: File, { data, columns, previewData }: ProcessedExcelData<ExcelRow>) => {
     setStockFile(file);
     setStockData(data, columns, previewData);
   };
@@ -43,14 +37,14 @@ export function UploadStep() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="space-y-8">
-        <FileUpload
+        <FileUpload<ExcelRow>
           title="1. Cargar Archivo de Ventas"
           file={ventasFile}
           onFileLoad={handleVentasLoad}
           setIsLoading={setIsLoading}
           setError={setError}
         />
-        <FileUpload
+        <FileUpload<ExcelRow>
           title="2. Cargar Archivo de Stock"
           file={stockFile}
           onFileLoad={handleStockLoad}

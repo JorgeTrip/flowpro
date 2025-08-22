@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
@@ -10,10 +10,34 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style
 const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
 const formatName = (name: string) => name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 
-const CustomizedLabel = (props: any) => {
-    const { x, y, width, height, index, data } = props;
+interface VendedorData {
+    name: string;
+    value: number;
+    importe: number;
+    cantidad: number;
+    porcentaje: string;
+}
 
-    if (!data || !data[index]) return null;
+interface CustomizedLabelProps {
+    x?: string | number;
+    y?: string | number;
+    width?: string | number;
+    height?: string | number;
+    index?: number;
+    data: VendedorData[];
+}
+
+const CustomizedLabel = (props: CustomizedLabelProps) => {
+    const { x = 0, y = 0, width = 0, height = 0, index, data } = props;
+
+    if (index === undefined || !data || !data[index]) {
+        return null;
+    }
+
+    const numX = typeof x === 'string' ? parseFloat(x) : x;
+    const numY = typeof y === 'string' ? parseFloat(y) : y;
+    const numWidth = typeof width === 'string' ? parseFloat(width) : width;
+    const numHeight = typeof height === 'string' ? parseFloat(height) : height;
     const item = data[index];
 
     const porcentaje = item.porcentaje || '0%';
@@ -22,10 +46,10 @@ const CustomizedLabel = (props: any) => {
 
     return (
         <g>
-            <text x={x + width + 8} y={y + height / 2 - 7} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
+            <text x={numX + numWidth + 8} y={numY + numHeight / 2 - 7} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
                 {porcentaje}
             </text>
-            <text x={x + width + 8} y={y + height / 2 + 9} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs">
+            <text x={numX + numWidth + 8} y={numY + numHeight / 2 + 9} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs">
                 {`${importeFormateado} | ${cantidadFormateada} u.`}
             </text>
         </g>
@@ -105,7 +129,13 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
     return Math.max(...data.map(item => item.value)) * 1.3;
   }, [data]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: { value: number }[];
+    label?: string;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">
@@ -162,7 +192,7 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
             </filter>
           </defs>
           <Bar dataKey="value" name={metric === 'importe' ? 'Ventas' : 'Cantidad'} fill="url(#colorBarVendedor)" filter="url(#shadowVendedor)" radius={[0, 4, 4, 0]}>
-            <LabelList dataKey="value" content={<CustomizedLabel data={data} />} />
+            <LabelList dataKey="value" content={(props) => <CustomizedLabel {...props} data={data} />} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

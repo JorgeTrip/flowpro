@@ -2,13 +2,7 @@
 'use client';
 
 import { useReporteVentasStore, ExcelRow } from '@/app/stores/reporteVentasStore';
-import { FileUpload } from '@/app/components/shared/FileUpload';
-
-interface FileLoadData {
-  data: ExcelRow[];
-  columns: string[];
-  previewData: ExcelRow[];
-}
+import { FileUpload, ProcessedExcelData } from '@/app/components/shared/FileUpload';
 
 export function UploadStep() {
   const {
@@ -20,9 +14,9 @@ export function UploadStep() {
     setStep,
   } = useReporteVentasStore();
 
-  const handleFileLoad = (file: File, fileData: any) => {
+  const handleFileLoad = (file: File, { data, columns, previewData }: ProcessedExcelData<ExcelRow>) => {
     setVentasFile(file);
-    setVentasData(fileData.data, fileData.columns, fileData.previewData);
+    setVentasData(data, columns, previewData);
   };
 
   const handleNextStep = () => {
@@ -34,7 +28,7 @@ export function UploadStep() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="space-y-8">
-        <FileUpload
+        <FileUpload<ExcelRow>
           title="1. Cargar Archivo de Ventas"
           file={ventasFile}
           onFileLoad={handleFileLoad}

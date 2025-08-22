@@ -4,17 +4,23 @@
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { processExcelFile } from '@/app/lib/excelProcessor';
-import { ExcelRow } from '@/app/stores/estimarDemandaStore'; // Usamos un tipo común
+// Este componente es genérico y no importa un tipo de fila específico.
 
-interface FileUploadProps {
+export interface ProcessedExcelData<T> {
+  data: T[];
+  columns: string[];
+  previewData: T[];
+}
+
+interface FileUploadProps<T> {
   title: string;
   file: File | null;
-  onFileLoad: (file: File, data: { data: ExcelRow[], columns: string[], previewData: ExcelRow[] }) => void;
+  onFileLoad: (file: File, data: ProcessedExcelData<T>) => void;
   setIsLoading?: (loading: boolean) => void;
   setError?: (error: string | null) => void;
 }
 
-export function FileUpload({ title, file, onFileLoad, setIsLoading, setError }: FileUploadProps) {
+export function FileUpload<T>({ title, file, onFileLoad, setIsLoading, setError }: FileUploadProps<T>) {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const uploadedFile = acceptedFiles[0];
     if (uploadedFile) {
@@ -27,7 +33,7 @@ export function FileUpload({ title, file, onFileLoad, setIsLoading, setError }: 
       }
       try {
         const processedData = await processExcelFile(uploadedFile);
-        onFileLoad(uploadedFile, processedData);
+        onFileLoad(uploadedFile, processedData as ProcessedExcelData<T>);
       } catch (error: unknown) {
         if (typeof setError === 'function') {
           setError(`Error al procesar el archivo: ${error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}`);

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList as RechartsLabelList } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
@@ -10,12 +10,28 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style
 const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
 const formatName = (name: string) => name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 
-const CustomizedLabel = (props: any) => {
-    const { x, y, width, value, metric } = props;
-    const formattedValue = metric === 'importe' ? formatCurrency(value) : `${formatQuantity(value)} u.`;
+interface CustomizedLabelProps {
+    x?: string | number;
+    y?: string | number;
+    width?: string | number;
+    value?: string | number;
+    metric: 'importe' | 'cantidad';
+}
+
+const CustomizedLabel = (props: CustomizedLabelProps) => {
+    const { x = 0, y = 0, width = 0, value = 0, metric } = props;
+
+    const numX = typeof x === 'string' ? parseFloat(x) : x;
+    const numY = typeof y === 'string' ? parseFloat(y) : y;
+    const numWidth = typeof width === 'string' ? parseFloat(width) : width;
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
+    if (numValue === undefined) return null;
+
+    const formattedValue = metric === 'importe' ? formatCurrency(numValue) : `${formatQuantity(numValue)} u.`;
 
     return (
-        <text x={x + width + 8} y={y + 12} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
+        <text x={numX + numWidth + 8} y={numY + 12} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
             {formattedValue}
         </text>
     );
@@ -26,19 +42,18 @@ interface Producto {
   total: number;
 }
 
-interface TopProductosProps {
-  productos: Producto[];
+
+interface TopProductosComponentProps {
+    topProductosMasVendidos: ReporteResultados['topProductosMasVendidos'];
+    topProductosMasVendidosPorImporte: ReporteResultados['topProductosMasVendidosPorImporte'];
+    topProductosMenosVendidos: ReporteResultados['topProductosMenosVendidos'];
 }
 
 export const TopProductos = ({
     topProductosMasVendidos,
     topProductosMasVendidosPorImporte,
     topProductosMenosVendidos,
-}: {
-    topProductosMasVendidos: ReporteResultados['topProductosMasVendidos'];
-    topProductosMasVendidosPorImporte: ReporteResultados['topProductosMasVendidosPorImporte'];
-    topProductosMenosVendidos: ReporteResultados['topProductosMenosVendidos'];
-}) => {
+}: TopProductosComponentProps) => {
     const [tipo, setTipo] = useState<'mas' | 'menos'>('mas');
     const [metric, setMetric] = useState<'importe' | 'cantidad'>('cantidad');
     const [numProductos, setNumProductos] = useState<number>(10);
@@ -130,7 +145,7 @@ export const TopProductos = ({
                         </linearGradient>
                     </defs>
                     <Bar dataKey="value" name={metric === 'importe' ? 'Ventas' : 'Cantidad'} fill="url(#colorBarProducto)" radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="value" content={<CustomizedLabel metric={metric} />} />
+                        <RechartsLabelList dataKey="value" content={(props) => <CustomizedLabel {...props} metric={metric} />} />
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
