@@ -21,6 +21,15 @@ const CustomizedLabel = (props: any) => {
     );
 };
 
+interface Producto {
+  producto: string;
+  total: number;
+}
+
+interface TopProductosProps {
+  productos: Producto[];
+}
+
 export const TopProductos = ({
     topProductosMasVendidos,
     topProductosMasVendidosPorImporte,
@@ -43,9 +52,9 @@ export const TopProductos = ({
         }
 
         return sourceData
-            .map(item => ({
+            .map((item: { descripcion: string; total?: number; cantidad?: number }) => ({
                 name: formatName(item.descripcion),
-                value: 'total' in item ? item.total : item.cantidad,
+                value: 'total' in item ? item.total || 0 : item.cantidad || 0,
             }))
             .slice(0, numProductos);
 
@@ -53,10 +62,16 @@ export const TopProductos = ({
 
     const maxValue = useMemo(() => {
         if (data.length === 0) return 0;
-        return Math.max(...data.map(item => item.value)) * 1.2;
+        return Math.max(...data.map((item: { value: number }) => item.value)) * 1.2;
     }, [data]);
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    interface TooltipProps {
+        active?: boolean;
+        payload?: Array<{ value: number }>;
+        label?: string;
+    }
+
+    const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
         if (active && payload && payload.length) {
             return (
                 <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">

@@ -1,6 +1,6 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 
-import { ExcelCellValue as CellValue, ExcelRow } from '@/app/stores/estimarDemandaStore';
+import { ExcelCellValue, ExcelRow } from '@/app/stores/estimarDemandaStore';
 
 // Tipos de datos compartidos que se exportan para ser usados en otros componentes
 export interface Mapeo {
@@ -44,7 +44,7 @@ export function getCriticalityColor(criticidad: 'alta' | 'media' | 'baja'): stri
 }
 
 // Función interna para parsear fechas de Excel
-function parseExcelDate(rawDate: CellValue): Date | null {
+function parseExcelDate(rawDate: ExcelCellValue): Date | null {
   if (rawDate instanceof Date) {
     return rawDate;
   }

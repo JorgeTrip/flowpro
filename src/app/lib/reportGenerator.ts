@@ -304,7 +304,7 @@ function agruparVentasPorMes(ventas: Venta[]) {
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      const [dd, mm, yyyy] = v.Fecha.split('/');
+      const [, mm] = v.Fecha.split('/');
       mesIdx = parseInt(mm, 10) - 1;
     } else {
       const fecha = new Date(v.Fecha);
@@ -338,7 +338,7 @@ function agruparPorRubro(ventas: Venta[]) {
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      const [dd, mm, yyyy] = v.Fecha.split('/');
+      const [, mm] = v.Fecha.split('/');
       mesIdx = parseInt(mm, 10) - 1;
     } else {
       const fecha = new Date(v.Fecha);
@@ -363,7 +363,6 @@ function agruparPorZona(ventas: Venta[]) {
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  const zonas = ['Interior', 'Retiro de cliente', 'G.B.A.', 'CABA'];
   const resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> = {};
   meses.forEach(mes => {
     resultado[mes] = {
@@ -376,7 +375,7 @@ function agruparPorZona(ventas: Venta[]) {
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      const [dd, mm, yyyy] = v.Fecha.split('/');
+      const [, mm] = v.Fecha.split('/');
       mesIdx = parseInt(mm, 10) - 1;
     } else {
       const fecha = new Date(v.Fecha);
@@ -501,7 +500,7 @@ function agruparPorVendedor(ventas: Venta[]) {
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      const [dd, mm, yyyy] = v.Fecha.split('/');
+      const [, mm] = v.Fecha.split('/');
       mesIdx = parseInt(mm, 10) - 1;
     } else {
       const fecha = new Date(v.Fecha);
@@ -559,7 +558,7 @@ function topProductosMenosVendidos(
     map[v.Articulo].cantidad += v.Cantidad;
   });
   return Object.entries(map)
-    .filter(([_, data]) => data.cantidad > 0)
+    .filter(([, data]) => data.cantidad > 0)
     .sort((a, b) => a[1].cantidad - b[1].cantidad)
     .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, cantidad: data.cantidad }));

@@ -10,28 +10,20 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style
 const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
 const formatName = (name: string) => name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 
-const CustomizedLabel = (props: any) => {
-    const { x, y, width, value, metric } = props;
-    const formattedValue = metric === 'importe' ? formatCurrency(value) : `${formatQuantity(value)} u.`;
 
-    return (
-        <text x={x + width + 8} y={y + 12} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
-            {formattedValue}
-        </text>
-    );
-};
+interface TopClientesProps {
+    topClientesMinoristas: ReporteResultados['topClientesMinoristas'];
+    topClientesDistribuidores: ReporteResultados['topClientesDistribuidores'];
+    topClientesMinoristasPorCantidad: ReporteResultados['topClientesMinoristasPorCantidad'];
+    topClientesDistribuidoresPorCantidad: ReporteResultados['topClientesDistribuidoresPorCantidad'];
+}
 
 export const TopClientes = ({
     topClientesMinoristas,
     topClientesDistribuidores,
     topClientesMinoristasPorCantidad,
     topClientesDistribuidoresPorCantidad,
-}: {
-    topClientesMinoristas: ReporteResultados['topClientesMinoristas'];
-    topClientesDistribuidores: ReporteResultados['topClientesDistribuidores'];
-    topClientesMinoristasPorCantidad: ReporteResultados['topClientesMinoristasPorCantidad'];
-    topClientesDistribuidoresPorCantidad: ReporteResultados['topClientesDistribuidoresPorCantidad'];
-}) => {
+}: TopClientesProps) => {
     const [tipoCliente, setTipoCliente] = useState<'Minoristas' | 'Distribuidores'>('Distribuidores');
     const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
     const [numClientes, setNumClientes] = useState<number>(10);
@@ -45,7 +37,7 @@ export const TopClientes = ({
         }
 
         return sourceData
-            .map(item => ({
+            .map((item: { cliente: string; total: number }) => ({
                 name: formatName(item.cliente),
                 value: item.total,
             }))
@@ -55,10 +47,16 @@ export const TopClientes = ({
 
     const maxValue = useMemo(() => {
         if (data.length === 0) return 0;
-        return Math.max(...data.map(item => item.value)) * 1.2;
+        return Math.max(...data.map((item: { value: number }) => item.value)) * 1.2;
     }, [data]);
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    interface TooltipProps {
+        active?: boolean;
+        payload?: Array<{ value: number }>;
+        label?: string;
+    }
+
+    const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
         if (active && payload && payload.length) {
             return (
                 <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">
@@ -115,9 +113,7 @@ export const TopClientes = ({
                             <stop offset="100%" stopColor="#8884d8" stopOpacity={0.9}/>
                         </linearGradient>
                     </defs>
-                    <Bar dataKey="value" name={metric === 'importe' ? 'Ventas' : 'Cantidad'} fill="url(#colorBarCliente)" radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="value" content={<CustomizedLabel metric={metric} />} />
-                    </Bar>
+                    <Bar dataKey="value" name={metric === 'importe' ? 'Ventas' : 'Cantidad'} fill="url(#colorBarCliente)" radius={[0, 4, 4, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </div>

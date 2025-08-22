@@ -1,30 +1,44 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import * as ExcelJS from 'exceljs';
-import type { ExcelRow, ExcelCellValue } from '@/app/stores/reporteVentasStore';
+import type { ExcelRow, ExcelCellValue } from '@/app/stores/estimarDemandaStore';
 
-function processFormulaResult(result: any): ExcelCellValue {
+interface RichTextElement {
+  text: string;
+}
+
+interface FormulaResult {
+  richText?: RichTextElement[];
+  text?: string;
+  error?: unknown;
+  formula?: string;
+  sharedFormula?: string;
+  result?: unknown;
+}
+
+function processFormulaResult(result: unknown): ExcelCellValue {
   if (result instanceof Date) {
     return result.toISOString();
   }
   if (typeof result === 'object' && result !== null) {
-    if ('richText' in result) {
-      return result.richText.map((rt: any) => rt.text).join('');
+    const formulaResult = result as FormulaResult;
+    if ('richText' in formulaResult && formulaResult.richText) {
+      return formulaResult.richText.map((rt: RichTextElement) => rt.text).join('');
     }
-    if ('hyperlink' in result) {
-      return result.text;
+    if ('hyperlink' in formulaResult && formulaResult.text) {
+      return formulaResult.text;
     }
-    if ('error' in result) {
+    if ('error' in formulaResult) {
       return ''; // Or some error indicator string
     }
     // It might be a formula that results in another formula object, recurse
-    if ('formula' in result || 'sharedFormula' in result) {
-        return processFormulaResult((result as any).result);
+    if ('formula' in formulaResult || 'sharedFormula' in formulaResult) {
+        return processFormulaResult(formulaResult.result);
     }
     // If it's just a generic object that can't be parsed, return empty string
     return '';
   }
   // For primitive types or null/undefined
-  return result === null || result === undefined ? '' : result;
+  return result === null || result === undefined ? '' : result as ExcelCellValue;
 }
 
 export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], columns: string[], previewData: ExcelRow[] }> {
@@ -104,13 +118,13 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
               } else if (typeof cellValue === 'object' && cellValue !== null && 'hyperlink' in cellValue) {
                 cellValue = cellValue.text;
               } else if (typeof cellValue === 'object' && cellValue !== null && ('formula' in cellValue || 'sharedFormula' in cellValue)) {
-                cellValue = processFormulaResult((cellValue as any).result);
+                cellValue = processFormulaResult((cellValue as FormulaResult).result);
               }
 
               if (typeof cellValue === 'object' && cellValue !== null) {
                 rowData[mappedHeader] = '';
               } else {
-                rowData[mappedHeader] = cellValue === undefined ? null : cellValue;
+                rowData[mappedHeader] = cellValue === undefined ? '' : cellValue;
               }
             }
           });

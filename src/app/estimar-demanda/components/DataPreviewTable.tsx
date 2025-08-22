@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import type { ExcelRow } from '@/app/stores/reporteVentasStore';
+import type { ExcelRow } from '@/app/stores/estimarDemandaStore';
 
 interface DataPreviewTableProps {
   previewData: ExcelRow[];

@@ -71,7 +71,7 @@ export const VentasPorZona = ({ ventasPorZona, cantidadesPorZona }: {
             outerRadius={150}
             fill="#8884d8"
             dataKey="value"
-            label={({ cx, cy, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0, index }) => {
+            label={({ cx, cy, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }) => {
               const RADIAN = Math.PI / 180;
               const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
               const x = cx + radius * Math.cos(-midAngle * RADIAN);

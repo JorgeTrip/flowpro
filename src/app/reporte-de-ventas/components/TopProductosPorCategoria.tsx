@@ -9,14 +9,29 @@ import { ReporteResultados } from '@/app/lib/reportGenerator';
 const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
 const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
 
-const CustomizedLabel = (props: any) => {
-    const { x, y, width, value, payload } = props;
+interface LabelProps {
+    x?: number;
+    y?: number;
+    width?: number;
+    value?: number;
+    payload?: {
+        isCategory?: boolean;
+        porcentaje?: number;
+        totalCategoria?: number;
+        cantidadCategoria?: number;
+        total?: number;
+        cantidad?: number;
+    };
+}
+
+const CustomizedLabel = (props: LabelProps) => {
+    const { x = 0, y = 0, width = 0, payload = {} } = props;
     const { isCategory, porcentaje, totalCategoria, cantidadCategoria, total, cantidad } = payload;
 
     const percentageText = `${(porcentaje || 0).toFixed(2)}%`;
     let detailsText = '';
     if (isCategory) {
-        detailsText = `${formatCurrency(totalCategoria)} | ${formatQuantity(cantidadCategoria)} u.`;
+        detailsText = `${formatCurrency(totalCategoria || 0)} | ${formatQuantity(cantidadCategoria || 0)} u.`;
     } else {
         detailsText = `${formatCurrency(total || 0)} | ${formatQuantity(cantidad || 0)} u.`;
     }
@@ -45,27 +60,37 @@ export const TopProductosPorCategoria = ({
 
     const chartData = useMemo(() => {
         const sourceData = metric === 'cantidad' ? topProductosPorCategoriaPorCantidad : topProductosPorCategoriaPorImporte;
-        const flattenedData: any[] = [];
+        const flattenedData: Array<{
+            name: string;
+            value: number;
+            isCategory: boolean;
+            porcentaje: number;
+            categoria: string;
+            [key: string]: unknown;
+        }> = [];
 
-        const totalGeneral = sourceData.reduce((acc, cat) => acc + (metric === 'cantidad' ? cat.cantidadCategoria : cat.totalCategoria), 0);
-
-        sourceData.forEach(cat => {
+        sourceData.slice(0, numProductos).forEach((cat) => {
             const catValue = metric === 'cantidad' ? cat.cantidadCategoria : cat.totalCategoria;
+            const totalValue = sourceData.reduce((sum, c) => sum + (metric === 'cantidad' ? c.cantidadCategoria : c.totalCategoria), 0);
+            
             flattenedData.push({
-                name: `${cat.categoria} (Total)`,
+                name: cat.categoria,
                 value: catValue,
                 isCategory: true,
-                porcentaje: (catValue / totalGeneral) * 100,
-                ...cat
+                porcentaje: (catValue / totalValue) * 100,
+                categoria: cat.categoria,
+                totalCategoria: cat.totalCategoria,
+                cantidadCategoria: cat.cantidadCategoria
             });
 
-            cat.productos.slice(0, numProductos).forEach(prod => {
+            cat.productos.forEach((prod) => {
                 const prodValue = metric === 'cantidad' ? prod.cantidad : prod.total;
                 flattenedData.push({
                     name: `  ${prod.descripcion}`,
                     value: prodValue,
                     isCategory: false,
                     porcentaje: (prodValue / catValue) * 100,
+                    categoria: cat.categoria,
                     ...prod
                 });
             });
@@ -76,7 +101,13 @@ export const TopProductosPorCategoria = ({
 
     const chartHeight = 300 + chartData.length * 40;
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    interface TooltipProps {
+        active?: boolean;
+        payload?: Array<{ payload: { isCategory?: boolean; categoria?: string; descripcion?: string; value: number; porcentaje: number } }>;
+        label?: string;
+    }
+
+    const CustomTooltip = ({ active, payload }: TooltipProps) => {
         if (active && payload && payload.length) {
             const data = payload[0].payload;
             return (

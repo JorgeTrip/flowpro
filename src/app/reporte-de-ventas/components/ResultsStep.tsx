@@ -42,12 +42,24 @@ const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: {
     });
   }, [allMonths, ventasPorMes, cantidadesPorMes]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipEntry {
+    name: string;
+    value: number;
+    color: string;
+  }
+
+  interface TooltipProps {
+    active?: boolean;
+    payload?: TooltipEntry[];
+    label?: string;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">
           <p className="font-bold">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: TooltipEntry, index: number) => (
             <p key={`item-${index}`} style={{ color: entry.color }}>
               {`${entry.name}: ${metric === 'importe' ? formatCurrency(entry.value) : formatQuantity(entry.value)}`}
             </p>

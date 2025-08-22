@@ -2,8 +2,14 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
+import { useEstimarDemandaStore, ExcelRow } from '@/app/stores/estimarDemandaStore';
 import { FileUpload } from '@/app/components/shared/FileUpload';
+
+interface FileLoadData {
+  data: ExcelRow[];
+  columns: string[];
+  previewData: ExcelRow[];
+}
 
 export function UploadStep() {
   const {
@@ -18,12 +24,12 @@ export function UploadStep() {
     setStep,
   } = useEstimarDemandaStore();
 
-  const handleVentasLoad = (file: File, { data, columns, previewData }: any) => {
+  const handleVentasLoad = (file: File, { data, columns, previewData }: FileLoadData) => {
     setVentasFile(file);
     setVentasData(data, columns, previewData);
   };
 
-  const handleStockLoad = (file: File, { data, columns, previewData }: any) => {
+  const handleStockLoad = (file: File, { data, columns, previewData }: FileLoadData) => {
     setStockFile(file);
     setStockData(data, columns, previewData);
   };

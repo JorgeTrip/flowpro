@@ -43,7 +43,7 @@ const DemandaStockChart = ({ data }: { data: ChartData[] }) => (
 const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
   <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-      <thead className="bg-gray-50 dark:bg-gray-800">
+      <thead className="bg-gray-100 dark:bg-gray-800">
         <tr>
           <th scope="col" className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Descripción</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">ID Producto</th>
@@ -74,7 +74,7 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
                 {item.stockReservado.toLocaleString()}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-700 dark:text-gray-200 text-center">
+              <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white text-center">
                 {item.stockNeto.toLocaleString()}
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-center">
