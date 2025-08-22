@@ -43,3 +43,4 @@ next-env.d.ts
 # Custom ignored directories
 /2025 - Hoja de ruta/
 /inventario/
+/ventas/

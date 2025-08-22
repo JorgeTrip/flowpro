@@ -20,7 +20,7 @@ const ErrorMessage = ({ message }: { message: string }) => (
 );
 
 export default function ReporteVentasPage() {
-  const { step, isLoading, error } = useReporteVentasStore();
+  const { step, isGenerating, error } = useReporteVentasStore();
 
   const renderStep = () => {
     switch (step) {
@@ -42,7 +42,7 @@ export default function ReporteVentasPage() {
       breadcrumbs={[{ nombre: 'Dashboard', href: '/' }, { nombre: 'Reporte de Ventas' }]}
     >
       <div className="relative">
-        {isLoading && <LoadingIndicator />}
+        {isGenerating && <LoadingIndicator />}
         {error && <ErrorMessage message={error} />}
         {renderStep()}
       </div>

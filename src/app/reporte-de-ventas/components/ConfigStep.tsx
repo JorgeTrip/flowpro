@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useReporteVentasStore, ExcelRow } from '@/app/stores/reporteVentasStore';
 import { Venta } from '../lib/types';
-import DataPreviewTable from '@/app/estimar-demanda/components/DataPreviewTable'; // TODO: Mover a una carpeta compartida
+import DataPreviewTable from './DataPreviewTable';
 
 // Icono de tilde para confirmación visual
 const CheckIcon = () => (

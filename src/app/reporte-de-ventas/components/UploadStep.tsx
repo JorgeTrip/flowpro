@@ -1,22 +1,28 @@
 // © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useReporteVentasStore } from '@/app/stores/reporteVentasStore';
+import { useReporteVentasStore, ExcelRow } from '@/app/stores/reporteVentasStore';
 import { FileUpload } from '@/app/components/shared/FileUpload';
+
+interface FileLoadData {
+  data: ExcelRow[];
+  columns: string[];
+  previewData: ExcelRow[];
+}
 
 export function UploadStep() {
   const {
     ventasFile,
     setVentasFile,
     setVentasData,
-    setIsLoading,
+    setIsGenerating,
     setError,
     setStep,
   } = useReporteVentasStore();
 
-  const handleFileLoad = (file: File, { data, columns, previewData }: any) => {
+  const handleFileLoad = (file: File, fileData: any) => {
     setVentasFile(file);
-    setVentasData(data, columns, previewData);
+    setVentasData(fileData.data, fileData.columns, fileData.previewData);
   };
 
   const handleNextStep = () => {
@@ -32,7 +38,7 @@ export function UploadStep() {
           title="1. Cargar Archivo de Ventas"
           file={ventasFile}
           onFileLoad={handleFileLoad}
-          setIsLoading={setIsLoading}
+          setIsLoading={setIsGenerating}
           setError={setError}
         />
       </div>
