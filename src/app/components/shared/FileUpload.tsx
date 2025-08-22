@@ -3,49 +3,42 @@
 
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
 import { processExcelFile } from '@/app/lib/excelProcessor';
+import { ExcelRow } from '@/app/stores/estimarDemandaStore'; // Usamos un tipo común
 
 interface FileUploadProps {
-  fileType: 'ventas' | 'stock';
   title: string;
+  file: File | null;
+  onFileLoad: (file: File, data: { data: ExcelRow[], columns: string[], previewData: ExcelRow[] }) => void;
+  setIsLoading?: (loading: boolean) => void;
+  setError?: (error: string | null) => void;
 }
 
-export function FileUpload({ fileType, title }: FileUploadProps) {
-  const {
-    setVentasFile,
-    setStockFile,
-    setVentasData,
-    setStockData,
-    setIsLoading,
-    setError,
-    ventasFile,
-    stockFile,
-  } = useEstimarDemandaStore();
-
-  const file = fileType === 'ventas' ? ventasFile : stockFile;
-
+export function FileUpload({ title, file, onFileLoad, setIsLoading, setError }: FileUploadProps) {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const uploadedFile = acceptedFiles[0];
     if (uploadedFile) {
-      setIsLoading(true);
-      setError(null);
+      // Add safety check for setIsLoading
+      if (typeof setIsLoading === 'function') {
+        setIsLoading(true);
+      }
+      if (typeof setError === 'function') {
+        setError(null);
+      }
       try {
-        const { data, columns, previewData } = await processExcelFile(uploadedFile);
-        if (fileType === 'ventas') {
-          setVentasFile(uploadedFile);
-          setVentasData(data, columns, previewData);
-        } else {
-          setStockFile(uploadedFile);
-          setStockData(data, columns, previewData);
-        }
+        const processedData = await processExcelFile(uploadedFile);
+        onFileLoad(uploadedFile, processedData);
       } catch (error: unknown) {
-        setError(`Error al procesar el archivo de ${fileType}: ${error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}`);
+        if (typeof setError === 'function') {
+          setError(`Error al procesar el archivo: ${error instanceof Error ? error.message : 'Ocurrió un error inesperado.'}`);
+        }
       } finally {
-        setIsLoading(false);
+        if (typeof setIsLoading === 'function') {
+          setIsLoading(false);
+        }
       }
     }
-  }, [fileType, setIsLoading, setError, setVentasFile, setVentasData, setStockFile, setStockData]);
+  }, [onFileLoad, setIsLoading, setError]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

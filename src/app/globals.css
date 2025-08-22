@@ -34,11 +34,10 @@ html:not(.dark) body h2,
 html:not(.dark) body h3,
 html:not(.dark) body h4,
 html:not(.dark) body h5,
-html:not(.dark) body h6,
+html:not(.dank) body h6,
 html:not(.dark) body .text-xl,
 html:not(.dark) body .text-2xl,
 html:not(.dark) body .text-3xl,
-html:not(.dark) body .font-semibold,
 html:not(.dark) body .font-bold {
   color: var(--gray-900) !important;
 }

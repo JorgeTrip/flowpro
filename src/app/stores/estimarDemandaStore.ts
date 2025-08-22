@@ -1,12 +1,12 @@
 // © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import { create } from 'zustand';
-import { CellValue } from 'read-excel-file';
 import { estimarDemanda } from '@/app/lib/demandEstimator';
 
-export type { CellValue };
+
+export type ExcelCellValue = string | number | boolean | Date | null;
 
 export interface ExcelRow {
-  [key: string]: CellValue;
+  [key: string]: ExcelCellValue;
 }
 
 interface Configuracion {

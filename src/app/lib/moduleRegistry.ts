@@ -30,11 +30,20 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     categoria: 'inventario'
   },
   {
+    id: 'reporte-de-ventas',
+    nombre: 'Reporte de Ventas',
+    ruta: '/reporte-de-ventas',
+    icono: '🛒',
+    descripcion: 'Análisis de ventas por producto',
+    activo: true,
+    categoria: 'ventas'
+  },
+  {
     id: 'gestion-ventas',
-    nombre: 'Gestión Ventas',
+    nombre: 'Gestión Ventas (CRM)',
     ruta: '/gestion-ventas',
     icono: '💰',
-    descripcion: 'CRM y seguimiento ventas',
+    descripcion: 'CRM y seguimiento de clientes',
     activo: false, // Se activa cuando se implemente
     categoria: 'ventas'
   },

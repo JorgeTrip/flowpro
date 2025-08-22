@@ -1,6 +1,31 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import * as ExcelJS from 'exceljs';
-import type { ExcelRow } from '@/app/stores/estimarDemandaStore';
+import type { ExcelRow, ExcelCellValue } from '@/app/stores/reporteVentasStore';
+
+function processFormulaResult(result: any): ExcelCellValue {
+  if (result instanceof Date) {
+    return result.toISOString();
+  }
+  if (typeof result === 'object' && result !== null) {
+    if ('richText' in result) {
+      return result.richText.map((rt: any) => rt.text).join('');
+    }
+    if ('hyperlink' in result) {
+      return result.text;
+    }
+    if ('error' in result) {
+      return ''; // Or some error indicator string
+    }
+    // It might be a formula that results in another formula object, recurse
+    if ('formula' in result || 'sharedFormula' in result) {
+        return processFormulaResult((result as any).result);
+    }
+    // If it's just a generic object that can't be parsed, return empty string
+    return '';
+  }
+  // For primitive types or null/undefined
+  return result === null || result === undefined ? '' : result;
+}
 
 export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], columns: string[], previewData: ExcelRow[] }> {
   return new Promise((resolve, reject) => {
@@ -26,34 +51,77 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
         let columns: string[] = [];
 
         const headerRow = worksheet.getRow(1);
-        if (headerRow.values) {
-          columns = (headerRow.values as (string | number | null | undefined)[]).slice(1).map(v => v ? String(v) : '');
-        }
+        const rawHeaders = (headerRow.values as string[])?.slice(1) || [];
+        columns = rawHeaders.map(h => h?.trim() || '');
 
-        worksheet.eachRow((row, rowNumber) => {
-          if (rowNumber > 1) { // Skip header row
-            const rowData: ExcelRow = {};
-            row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-              const header = columns[colNumber - 1];
-              if (header) {
-                rowData[header] = cell.value as string | number;
-              }
-            });
-            data.push(rowData);
+        // Mapeo de cabeceras flexibles
+        const headerMapping: { [key: string]: string } = {};
+        const expectedHeaders: { [key: string]: string[] } = {
+          Fecha: ['fecha'],
+          Cliente: ['cliente'],
+          Articulo: ['articulo', 'artículo'],
+          Descripcion: ['descripcion', 'descripción'],
+          Cantidad: ['cantidad'],
+          PrecioTotal: ['preciototal', 'precio total'],
+          DescripcionZona: ['descripcionzona', 'descripción zona', 'zona'],
+          ReferenciaVendedor: ['referenciavendedor', 'vendedor'],
+          DescRubro: ['descrubro', 'rubro'],
+          DirectoIndirecto: ['directoindirecto', 'tipo venta'],
+        };
 
-            // Capture the first 2 data rows for the preview
-            if (rowNumber <= 3) {
-              const previewRowData: ExcelRow = {};
-              row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-                const header = columns[colNumber - 1];
-                if (header) {
-                  previewRowData[header] = cell.text; // Use .text for display-friendly value
-                }
-              });
-              previewData.push(previewRowData);
+        columns.forEach((header, index) => {
+          const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
+          for (const key in expectedHeaders) {
+            if (expectedHeaders[key].includes(normalizedHeader)) {
+              headerMapping[index] = key;
+              break;
             }
           }
         });
+
+        // Process data rows
+        for (let i = 2; i <= worksheet.rowCount; i++) {
+          const row = worksheet.getRow(i);
+          const rowData: ExcelRow = {};
+          let hasValues = false;
+
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            const header = columns[colNumber - 1];
+            if (header) {
+              const mappedHeader = headerMapping[header.toLowerCase().trim()] || header;
+
+              let cellValue = cell.value;
+              if (cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== '') {
+                hasValues = true;
+              }
+
+              if (cellValue instanceof Date) {
+                cellValue = cellValue.toISOString();
+              } else if (typeof cellValue === 'object' && cellValue !== null && 'error' in cellValue) {
+                cellValue = '';
+              } else if (typeof cellValue === 'object' && cellValue !== null && 'richText' in cellValue) {
+                cellValue = cellValue.richText.map(rt => rt.text).join('');
+              } else if (typeof cellValue === 'object' && cellValue !== null && 'hyperlink' in cellValue) {
+                cellValue = cellValue.text;
+              } else if (typeof cellValue === 'object' && cellValue !== null && ('formula' in cellValue || 'sharedFormula' in cellValue)) {
+                cellValue = processFormulaResult((cellValue as any).result);
+              }
+
+              if (typeof cellValue === 'object' && cellValue !== null) {
+                rowData[mappedHeader] = '';
+              } else {
+                rowData[mappedHeader] = cellValue === undefined ? null : cellValue;
+              }
+            }
+          });
+
+          if (hasValues) {
+            data.push(rowData);
+            if (previewData.length < 2) {
+              previewData.push(rowData);
+            }
+          }
+        }
 
         resolve({ data, columns, previewData });
       } catch {

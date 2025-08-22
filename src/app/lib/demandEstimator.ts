@@ -1,6 +1,6 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 
-import { CellValue, ExcelRow } from '@/app/stores/estimarDemandaStore';
+import { ExcelCellValue as CellValue, ExcelRow } from '@/app/stores/estimarDemandaStore';
 
 // Tipos de datos compartidos que se exportan para ser usados en otros componentes
 export interface Mapeo {
@@ -47,6 +47,12 @@ export function getCriticalityColor(criticidad: 'alta' | 'media' | 'baja'): stri
 function parseExcelDate(rawDate: CellValue): Date | null {
   if (rawDate instanceof Date) {
     return rawDate;
+  }
+  if (typeof rawDate === 'string') {
+    const parsedDate = new Date(rawDate);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate;
+    }
   }
   if (typeof rawDate === 'number') {
     const excelDate = new Date(Math.round((rawDate - 25569) * 86400 * 1000));

@@ -13,7 +13,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-const SelectAsignacion = ({ label, columnas, value, onChange }: { label: string, columnas: string[], value: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void }) => (
+const SelectAsignacion = ({ label, columnas, value, onChange, disabled = false }: { label: string, columnas: string[], value: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void, disabled?: boolean }) => (
   <div>
     <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
       {label}
@@ -22,9 +22,13 @@ const SelectAsignacion = ({ label, columnas, value, onChange }: { label: string,
     <select
       value={value}
       onChange={onChange}
-      className="mt-1 block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-base shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+      disabled={disabled}
+      className={`mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base shadow-sm transition-shadow duration-200 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-gray-600 ${disabled
+        ? 'cursor-not-allowed bg-gray-50 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+        : 'bg-white text-gray-900 hover:shadow-lg dark:bg-gray-700 dark:text-white dark:hover:shadow-lg dark:hover:shadow-gray-600/[.5]'
+      }`}
     >
-      <option value="">Seleccionar columna...</option>
+      <option value="">{disabled ? 'No aplicable' : 'Seleccionar columna...'}</option>
       {columnas.map(col => (
         <option key={col} value={col}>{col}</option>
       ))}
@@ -68,9 +72,15 @@ export function ConfigStep() {
 
   useEffect(() => {
     const findDefaultColumn = (columns: string[], keywords: string[]): string => {
+      // Prioriza la coincidencia exacta (insensible a mayúsculas/minúsculas)
       for (const keyword of keywords) {
-        const foundColumn = columns.find(col => col.toLowerCase().includes(keyword.toLowerCase()));
-        if (foundColumn) return foundColumn;
+        const exactMatch = columns.find(col => col.toLowerCase() === keyword.toLowerCase());
+        if (exactMatch) return exactMatch;
+      }
+      // Si no hay coincidencia exacta, busca una coincidencia parcial
+      for (const keyword of keywords) {
+        const partialMatch = columns.find(col => col.toLowerCase().includes(keyword.toLowerCase()));
+        if (partialMatch) return partialMatch;
       }
       return '';
     };
@@ -93,17 +103,26 @@ export function ConfigStep() {
     }
   }, [ventasColumnas, stockColumnas, setMapeo]);
 
-  const handleMapeoChange = (fileType: 'ventas' | 'stock', campo: 'productoId' | 'cantidad' | 'descripcion' | 'stockReservado' | 'fecha', valor: string) => {
+  const handleMapeoChange = (
+    fileType: 'ventas' | 'stock',
+    campo: keyof typeof mapeo.ventas | keyof typeof mapeo.stock,
+    valor: string
+  ) => {
     setMapeo(prev => {
-      const newState = {
-        ...prev,
-        [fileType]: { ...prev[fileType], [campo]: valor },
-      };
+      const newState = { ...prev };
 
-      // Si se mapea la descripción en un archivo, se des-mapea en el otro.
-      if (campo === 'descripcion' && valor) {
+      if (fileType === 'ventas' && campo in prev.ventas) {
+        newState.ventas = { ...prev.ventas, [campo]: valor };
+      } else if (fileType === 'stock' && campo in prev.stock) {
+        newState.stock = { ...prev.stock, [campo]: valor };
+      }
+
+      // Lógica de exclusión mutua para la descripción
+      if (campo === 'descripcion') {
         const otroFileType = fileType === 'ventas' ? 'stock' : 'ventas';
-        newState[otroFileType].descripcion = '';
+        if (valor) {
+          newState[otroFileType].descripcion = '';
+        }
       }
 
       return newState;
@@ -145,11 +164,11 @@ export function ConfigStep() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Paso 2: Configurar Análisis</h3>
-      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Asigne las columnas de sus archivos a los campos requeridos para el análisis.</p>
+      <p className="mt-1 text-sm text-gray-700 dark:text-gray-400">Asigne las columnas de sus archivos a los campos requeridos para el análisis.</p>
 
       <div className="mt-8 space-y-8">
         <div className="rounded-md border border-gray-300 p-6 dark:border-gray-600">
-          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Archivo de Ventas: <span className="font-normal text-gray-600 dark:text-gray-400">{ventasFile?.name}</span></h4>
+          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Archivo de Ventas: <span className="font-normal text-gray-700 dark:text-gray-400">{ventasFile?.name}</span></h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               {/* <FileUpload fileType="ventas" title="Archivo de Ventas" /> */}
@@ -182,15 +201,16 @@ export function ConfigStep() {
                   value={mapeo.ventas.fecha}
                   onChange={(e) => handleMapeoChange('ventas', 'fecha', e.target.value)}
                 />
-                <div className={mapeo.stock.descripcion ? 'opacity-50 pointer-events-none' : ''}>
+                <div>
                   <SelectAsignacion
                     label="Descripción del Producto"
                     columnas={ventasColumnas}
                     value={mapeo.ventas.descripcion}
                     onChange={(e) => handleMapeoChange('ventas', 'descripcion', e.target.value)}
+                    disabled={!!mapeo.stock.descripcion}
                   />
                   {mapeo.stock.descripcion && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                       Ya mapeado en archivo de stock
                     </p>
                   )}
@@ -201,7 +221,7 @@ export function ConfigStep() {
         </div>
 
         <div className="rounded-md border border-gray-300 p-6 dark:border-gray-600">
-          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Archivo de Stock: <span className="font-normal text-gray-600 dark:text-gray-400">{stockFile?.name}</span></h4>
+          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Archivo de Stock: <span className="font-normal text-gray-700 dark:text-gray-400">{stockFile?.name}</span></h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               {/* <FileUpload fileType="stock" title="Archivo de Stock" /> */}
@@ -234,15 +254,16 @@ export function ConfigStep() {
                   value={mapeo.stock.stockReservado}
                   onChange={(e) => handleMapeoChange('stock', 'stockReservado', e.target.value)}
                 />
-                <div className={mapeo.ventas.descripcion ? 'opacity-50 pointer-events-none' : ''}>
+                <div>
                   <SelectAsignacion
                     label="Descripción del Producto"
                     columnas={stockColumnas}
                     value={mapeo.stock.descripcion}
                     onChange={(e) => handleMapeoChange('stock', 'descripcion', e.target.value)}
+                    disabled={!!mapeo.ventas.descripcion}
                   />
                   {mapeo.ventas.descripcion && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                       Ya mapeado en archivo de ventas
                     </p>
                   )}
@@ -257,7 +278,7 @@ export function ConfigStep() {
         <div className="flex items-center justify-end space-x-4">
           <div className="flex-grow">
             {isReady ? (
-              <div className="flex items-center justify-center rounded-md border border-green-200 bg-green-50 p-3 text-sm font-medium text-green-800 dark:border-green-700 dark:bg-green-900/20 dark:text-green-300">
+              <div className="flex items-center justify-center rounded-md bg-green-600 p-3 text-sm font-medium text-white dark:bg-green-700">
                 <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
@@ -272,10 +293,10 @@ export function ConfigStep() {
               </div>
             )}
           </div>
-          <button onClick={() => setStep(1)} className="rounded-md bg-gray-200 px-4 py-2 font-semibold text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
+          <button onClick={() => setStep(1)} className="rounded-md border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-800 transition-colors hover:bg-gray-100 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
             Volver
           </button>
-          <button onClick={handleAnalizar} disabled={!isReady} className="rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400 dark:disabled:bg-gray-500">
+          <button onClick={handleAnalizar} disabled={!isReady} className="rounded-md bg-green-600 px-4 py-2 font-semibold text-white shadow-sm transition-colors hover:bg-green-700 hover:text-white disabled:cursor-not-allowed disabled:bg-gray-400 dark:disabled:bg-gray-500">
             Realizar Análisis
           </button>
         </div>

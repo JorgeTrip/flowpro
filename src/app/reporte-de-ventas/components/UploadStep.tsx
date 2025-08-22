@@ -1,35 +1,26 @@
-// 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
-// 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
+// © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
+import { useReporteVentasStore } from '@/app/stores/reporteVentasStore';
 import { FileUpload } from '@/app/components/shared/FileUpload';
 
 export function UploadStep() {
   const {
     ventasFile,
-    stockFile,
     setVentasFile,
-    setStockFile,
     setVentasData,
-    setStockData,
     setIsLoading,
     setError,
     setStep,
-  } = useEstimarDemandaStore();
+  } = useReporteVentasStore();
 
-  const handleVentasLoad = (file: File, { data, columns, previewData }: any) => {
+  const handleFileLoad = (file: File, { data, columns, previewData }: any) => {
     setVentasFile(file);
     setVentasData(data, columns, previewData);
   };
 
-  const handleStockLoad = (file: File, { data, columns, previewData }: any) => {
-    setStockFile(file);
-    setStockData(data, columns, previewData);
-  };
-
   const handleNextStep = () => {
-    if (ventasFile && stockFile) {
+    if (ventasFile) {
       setStep(2);
     }
   };
@@ -40,14 +31,7 @@ export function UploadStep() {
         <FileUpload
           title="1. Cargar Archivo de Ventas"
           file={ventasFile}
-          onFileLoad={handleVentasLoad}
-          setIsLoading={setIsLoading}
-          setError={setError}
-        />
-        <FileUpload
-          title="2. Cargar Archivo de Stock"
-          file={stockFile}
-          onFileLoad={handleStockLoad}
+          onFileLoad={handleFileLoad}
           setIsLoading={setIsLoading}
           setError={setError}
         />
@@ -55,7 +39,7 @@ export function UploadStep() {
       <div className="mt-8 flex justify-end">
         <button
           onClick={handleNextStep}
-          disabled={!ventasFile || !stockFile}
+          disabled={!ventasFile}
           className="rounded-md bg-blue-600 px-4 py-2 text-white font-semibold shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400 dark:disabled:bg-gray-600"
         >
           Siguiente
@@ -64,4 +48,3 @@ export function UploadStep() {
     </div>
   );
 }
-
