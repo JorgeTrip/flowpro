@@ -147,6 +147,29 @@ export function ConfigStep() {
         </div>
       </div>
 
+      {/* Mensaje de estado del mapeo */}
+      <div className="mt-6">
+        {isReady ? (
+          <div className="flex items-center rounded-md bg-green-50 p-4 dark:bg-green-900/20">
+            <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <p className="ml-3 text-sm font-medium text-green-800 dark:text-green-200">
+              ✅ Configuración completa. Los campos obligatorios están mapeados y listos para generar el reporte.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
+            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <p className="ml-3 text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              ⚠️ Faltan campos obligatorios: Fecha, Artículo (SKU), Cantidad y Precio Total son requeridos para continuar.
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="mt-8 flex items-center justify-end space-x-4">
         <button onClick={() => setStep(1)} className="rounded-md bg-gray-200 px-4 py-2 font-semibold text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
           Volver

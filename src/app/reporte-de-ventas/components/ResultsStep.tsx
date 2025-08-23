@@ -112,6 +112,7 @@ const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: {
 
 export function ResultsStep() {
   const { resultados, reset, isGenerating } = useReporteVentasStore();
+  const [activeTab, setActiveTab] = useState<'graficos' | 'tablas'>('graficos');
 
   const handleExportar = () => {
     // TODO: Implementar la lógica para exportar los resultados
@@ -127,6 +128,19 @@ export function ResultsStep() {
         </div>
     );
   }
+
+  const TabButton = ({ tab, label }: { tab: 'graficos' | 'tablas'; label: string }) => (
+    <button
+      onClick={() => setActiveTab(tab)}
+      className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors ${
+        activeTab === tab
+          ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div className="space-y-8">
@@ -145,29 +159,136 @@ export function ResultsStep() {
       </div>
 
       {resultados ? (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <VentasMensuales ventasPorMes={resultados.ventasPorMes} cantidadesPorMes={resultados.cantidadesPorMes} />
-            <VentasPorRubro ventasPorRubro={resultados.ventasPorRubro} cantidadesPorRubro={resultados.cantidadesPorRubro} />
-            <VentasPorZona ventasPorZona={resultados.ventasPorZona} cantidadesPorZona={resultados.cantidadesPorZona} />
-            <VentasPorVendedor ventasPorVendedor={resultados.ventasPorVendedor} cantidadesPorVendedor={resultados.cantidadesPorVendedor} />
-            <TopClientes 
-              topClientesMinoristas={resultados.topClientesMinoristas}
-              topClientesDistribuidores={resultados.topClientesDistribuidores}
-              topClientesMinoristasPorCantidad={resultados.topClientesMinoristasPorCantidad}
-              topClientesDistribuidoresPorCantidad={resultados.topClientesDistribuidoresPorCantidad}
-            />
-            <TopProductos
-              topProductosMasVendidos={resultados.topProductosMasVendidos}
-              topProductosMasVendidosPorImporte={resultados.topProductosMasVendidosPorImporte}
-              topProductosMenosVendidos={resultados.topProductosMenosVendidos}
-            />
-            <TopProductosPorCategoria
-              topProductosPorCategoriaPorCantidad={resultados.topProductosPorCategoriaPorCantidad}
-              topProductosPorCategoriaPorImporte={resultados.topProductosPorCategoriaPorImporte}
-            />
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            <TabButton tab="graficos" label="📊 Gráficos" />
+            <TabButton tab="tablas" label="📋 Tablas" />
           </div>
-        </>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'graficos' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <VentasMensuales ventasPorMes={resultados.ventasPorMes} cantidadesPorMes={resultados.cantidadesPorMes} />
+                <VentasPorRubro ventasPorRubro={resultados.ventasPorRubro} cantidadesPorRubro={resultados.cantidadesPorRubro} />
+                <VentasPorZona ventasPorZona={resultados.ventasPorZona} cantidadesPorZona={resultados.cantidadesPorZona} />
+                <VentasPorVendedor ventasPorVendedor={resultados.ventasPorVendedor} cantidadesPorVendedor={resultados.cantidadesPorVendedor} />
+                <TopClientes 
+                  topClientesMinoristas={resultados.topClientesMinoristas}
+                  topClientesDistribuidores={resultados.topClientesDistribuidores}
+                  topClientesMinoristasPorCantidad={resultados.topClientesMinoristasPorCantidad}
+                  topClientesDistribuidoresPorCantidad={resultados.topClientesDistribuidoresPorCantidad}
+                />
+                <TopProductos
+                  topProductosMasVendidos={resultados.topProductosMasVendidos}
+                  topProductosMasVendidosPorImporte={resultados.topProductosMasVendidosPorImporte}
+                  topProductosMenosVendidos={resultados.topProductosMenosVendidos}
+                />
+                <TopProductosPorCategoria
+                  topProductosPorCategoriaPorCantidad={resultados.topProductosPorCategoriaPorCantidad}
+                  topProductosPorCategoriaPorImporte={resultados.topProductosPorCategoriaPorImporte}
+                />
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Tablas de datos */}
+                <div className="grid grid-cols-1 gap-8">
+                  {/* Tabla de Ventas por Mes */}
+                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3">
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas Mensuales</h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Mes</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe A</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe X</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad A</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad X</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                          {Object.entries(resultados.ventasPorMes).map(([mes, data]) => (
+                            <tr key={mes}>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{mes}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.A)}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.X)}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorMes[mes]?.A || 0)}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorMes[mes]?.X || 0)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Tabla de Ventas por Rubro */}
+                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3">
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas por Rubro</h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Rubro</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe A</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe X</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad A</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad X</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                          {Object.entries(resultados.ventasPorRubro).map(([rubro, data]) => (
+                            <tr key={rubro}>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{rubro || 'Sin rubro'}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.A)}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.X)}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorRubro[rubro]?.A || 0)}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorRubro[rubro]?.X || 0)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Tabla de Top Productos */}
+                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3">
+                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top Productos Más Vendidos</h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Posición</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Artículo</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                          {resultados.topProductosMasVendidos.map((producto, index) => (
+                            <tr key={producto.articulo}>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{index + 1}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{producto.articulo}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(producto.cantidad)}</td>
+                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(producto.importe)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <p className="text-gray-500 dark:text-gray-400">No hay resultados para mostrar. Genere un nuevo reporte para comenzar.</p>
