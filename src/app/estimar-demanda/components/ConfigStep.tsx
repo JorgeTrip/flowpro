@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useEstimarDemandaStore } from '@/app/stores/estimarDemandaStore';
+import { useEstimarDemandaStore, ExcelRow } from '@/app/stores/estimarDemandaStore';
 import { estimarDemanda } from '@/app/lib/demandEstimator';
 import DataPreviewTable from './DataPreviewTable';
 
@@ -85,7 +85,7 @@ export function ConfigStep() {
       return '';
     };
 
-    const findValidDescriptionColumn = (data: any[], columns: string[], keywords: string[]): string => {
+    const findValidDescriptionColumn = (data: ExcelRow[], columns: string[], keywords: string[]): string => {
       // Buscar todas las columnas que coincidan con los criterios
       const candidateColumns: string[] = [];
       
