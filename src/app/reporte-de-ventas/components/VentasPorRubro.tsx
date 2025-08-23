@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
@@ -11,54 +11,12 @@ const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(
 
 const COLORS = ['#3b82f6', '#10b981']; // Azul y Verde
 
-interface ActiveShapeProps {
-    cx?: number;
-    cy?: number;
-    innerRadius?: number;
-    outerRadius?: number;
-    startAngle?: number;
-    endAngle?: number;
-    fill?: string;
-    payload?: { name: string; value: number };
-    percent?: number;
-    metric: 'importe' | 'cantidad';
-}
-
-const renderActiveShape = (props: ActiveShapeProps) => {
-    const { cx = 0, cy = 0, innerRadius = 0, outerRadius = 0, startAngle = 0, endAngle = 0, fill = '#8884d8', payload, percent = 0, metric } = props;
-
-    if (!payload) return <g />;
-
-  return (
-    <g>
-      <text x={cx} y={cy} dy={-15} textAnchor="middle" fill={fill} className="font-bold">
-        {payload.name}
-      </text>
-      <text x={cx} y={cy} dy={5} textAnchor="middle" fill="#333" className="dark:fill-gray-200">
-        {metric === 'importe' ? formatCurrency(payload.value) : formatQuantity(payload.value)}
-      </text>
-      <text x={cx} y={cy} dy={25} textAnchor="middle" fill="#999" className="dark:fill-gray-400">
-        {`( ${(percent * 100).toFixed(2)}%)`}
-      </text>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 6}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-    </g>
-  );
-};
 
 export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
   ventasPorRubro: ReporteResultados['ventasPorRubro'];
   cantidadesPorRubro: ReporteResultados['cantidadesPorRubro'];
 }) => {
   const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   const data = useMemo(() => {
     const sourceData = metric === 'importe' ? ventasPorRubro : cantidadesPorRubro;
@@ -68,13 +26,6 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
     }));
   }, [metric, ventasPorRubro, cantidadesPorRubro]);
 
-  const onPieEnter = (_: unknown, index: number) => {
-    setActiveIndex(index);
-  };
-
-  const onPieLeave = () => {
-    setActiveIndex(undefined);
-  };
 
   interface CustomTooltipProps {
     active?: boolean;
@@ -108,7 +59,6 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
       <ResponsiveContainer width="100%" height={400}>
         <PieChart>
           <Pie
-            {...{ activeIndex, activeShape: (props: any) => renderActiveShape({ ...props, metric }) } as any}
             data={data}
             cx="50%"
             cy="50%"
@@ -116,8 +66,6 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
             outerRadius={120}
             fill="#8884d8"
             dataKey="value"
-            onMouseEnter={onPieEnter}
-            onMouseLeave={onPieLeave}
                       >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
