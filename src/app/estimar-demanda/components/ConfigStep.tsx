@@ -85,23 +85,84 @@ export function ConfigStep() {
       return '';
     };
 
+    const findValidDescriptionColumn = (data: any[], columns: string[], keywords: string[]): string => {
+      // Buscar todas las columnas que coincidan con los criterios
+      const candidateColumns: string[] = [];
+      
+      // Coincidencias exactas primero
+      for (const keyword of keywords) {
+        const exactMatch = columns.find(col => col.toLowerCase() === keyword.toLowerCase());
+        if (exactMatch) candidateColumns.push(exactMatch);
+      }
+      
+      // Coincidencias parciales después
+      for (const keyword of keywords) {
+        const partialMatch = columns.find(col => 
+          col.toLowerCase().includes(keyword.toLowerCase()) && 
+          !candidateColumns.includes(col)
+        );
+        if (partialMatch) candidateColumns.push(partialMatch);
+      }
+      
+      // Validar que la columna tenga datos reales en las primeras 3 filas
+      for (const column of candidateColumns) {
+        let hasValidData = false;
+        
+        for (let i = 0; i < Math.min(3, data.length); i++) {
+          const value = data[i][column];
+          if (value && String(value).trim() !== '' && String(value).toLowerCase() !== 'null') {
+            hasValidData = true;
+            break;
+          }
+        }
+        
+        if (hasValidData) {
+          console.log(`Columna de descripción válida encontrada: '${column}' con datos reales`);
+          return column;
+        } else {
+          console.log(`Columna '${column}' descartada: sin datos válidos en las primeras filas`);
+        }
+      }
+      
+      return '';
+    };
+
     if (ventasColumnas.length > 0 || stockColumnas.length > 0) {
+      console.log('Columnas de ventas disponibles:', ventasColumnas);
+      console.log('Columnas de stock disponibles:', stockColumnas);
+      
+      // Buscar descripción en ambos archivos con validación de datos
+      const descripcionVentas = findValidDescriptionColumn(
+        ventasData, 
+        ventasColumnas, 
+        ['descripcion', 'descripción', 'desc', 'desc.', 'detalle', 'producto', 'articulo', 'artículo']
+      );
+      const descripcionStock = findValidDescriptionColumn(
+        stockData, 
+        stockColumnas, 
+        ['descripcion', 'descripción', 'desc', 'desc.']
+      );
+      
+      // Solo asignar descripción a uno de los archivos (priorizar ventas si tiene datos válidos)
+      const usarDescripcionVentas = descripcionVentas && descripcionVentas.trim();
+      const usarDescripcionStock = !usarDescripcionVentas && descripcionStock && descripcionStock.trim();
+      
       setMapeo(prev => ({
         ventas: {
           productoId: prev.ventas.productoId || findDefaultColumn(ventasColumnas, ['cod', 'cód', 'cod.', 'cód.']),
           cantidad: prev.ventas.cantidad || findDefaultColumn(ventasColumnas, ['Cantidad Control Stock', 'control stock', 'cantidad']),
           fecha: prev.ventas.fecha || findDefaultColumn(ventasColumnas, ['fecha']),
-          descripcion: prev.ventas.descripcion || findDefaultColumn(ventasColumnas, ['descripcion', 'descripción']),
+          descripcion: prev.ventas.descripcion || (usarDescripcionVentas ? descripcionVentas : ''),
         },
         stock: {
           productoId: prev.stock.productoId || findDefaultColumn(stockColumnas, ['cod', 'cód', 'cod.', 'cód.']),
           cantidad: prev.stock.cantidad || findDefaultColumn(stockColumnas, ['saldo control stock', 'stock', 'saldo']),
           stockReservado: prev.stock.stockReservado || findDefaultColumn(stockColumnas, ['comprometida', 'reservado']),
-          descripcion: prev.stock.descripcion || findDefaultColumn(stockColumnas, ['descripcion', 'descripción']),
+          descripcion: prev.stock.descripcion || (usarDescripcionStock ? descripcionStock : ''),
         },
       }));
     }
-  }, [ventasColumnas, stockColumnas, setMapeo]);
+  }, [ventasColumnas, stockColumnas, ventasData, stockData, setMapeo]);
 
   const handleMapeoChange = <T extends 'ventas' | 'stock'>(
     fileType: T,
@@ -202,9 +263,9 @@ export function ConfigStep() {
                     columnas={ventasColumnas}
                     value={mapeo.ventas.descripcion}
                     onChange={(e) => handleMapeoChange('ventas', 'descripcion', e.target.value)}
-                    disabled={!!mapeo.stock.descripcion}
+                    disabled={!!mapeo.stock.descripcion && !!mapeo.stock.descripcion.trim()}
                   />
-                  {mapeo.stock.descripcion && (
+                  {mapeo.stock.descripcion && mapeo.stock.descripcion.trim() && (
                     <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                       Ya mapeado en archivo de stock
                     </p>
@@ -255,9 +316,9 @@ export function ConfigStep() {
                     columnas={stockColumnas}
                     value={mapeo.stock.descripcion}
                     onChange={(e) => handleMapeoChange('stock', 'descripcion', e.target.value)}
-                    disabled={!!mapeo.ventas.descripcion}
+                    disabled={!!mapeo.ventas.descripcion && !!mapeo.ventas.descripcion.trim()}
                   />
-                  {mapeo.ventas.descripcion && (
+                  {mapeo.ventas.descripcion && mapeo.ventas.descripcion.trim() && (
                     <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                       Ya mapeado en archivo de ventas
                     </p>

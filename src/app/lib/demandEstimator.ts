@@ -106,20 +106,44 @@ export function estimarDemanda(
   const datosMesSeleccionado = ventasPorMes[mesConMasVentas];
 
   const ventasPorProducto: { [key: string]: { cantidad: number, descripcion?: string } } = {};
+  
+  // Log the mapping being used for sales
+  console.log('Mapeo de columnas para ventas:', {
+    productoId: mapeo.ventas.productoId,
+    cantidad: mapeo.ventas.cantidad,
+    descripcion: mapeo.ventas.descripcion || 'No mapeada'
+  });
+
   datosMesSeleccionado.forEach((row, index) => {
     const productoId = String(row[mapeo.ventas.productoId]);
     const cantidad = Number(row[mapeo.ventas.cantidad]);
-
+    
+    // Get description if mapping exists and value is not empty
+    let descripcion = undefined;
+    if (mapeo.ventas.descripcion && row[mapeo.ventas.descripcion]) {
+      const rawDesc = String(row[mapeo.ventas.descripcion]).trim();
+      descripcion = rawDesc !== '' ? rawDesc : undefined;
+    }
+    
     if (index < 5) { // Log details for the first 5 rows of the selected month
-        console.log(`Fila de venta ${index}: ID Producto: '${productoId}', Cantidad: '${row[mapeo.ventas.cantidad]}' (convertido a ${cantidad})`);
+        console.log(`Fila de venta ${index}:`);
+        console.log(`- ID Producto: '${productoId}'`);
+        console.log(`- Cantidad: '${row[mapeo.ventas.cantidad]}' (convertido a ${cantidad})`);
+        console.log(`- Descripción mapeada: '${mapeo.ventas.descripcion || 'No mapeada'}'`);
+        console.log(`- Valor de descripción: '${descripcion || 'VACÍA/NULA'}'`);
     }
 
     if (productoId && !isNaN(cantidad)) {
       if (!ventasPorProducto[productoId]) {
         ventasPorProducto[productoId] = { 
           cantidad: 0, 
-          descripcion: mapeo.ventas.descripcion ? String(row[mapeo.ventas.descripcion]) : undefined 
+          descripcion: descripcion
         };
+      } else {
+        // Solo actualizar la descripción si no está vacía y no hay una descripción previa
+        if (!ventasPorProducto[productoId].descripcion && descripcion) {
+          ventasPorProducto[productoId].descripcion = descripcion;
+        }
       }
       ventasPorProducto[productoId].cantidad += cantidad;
     }
@@ -127,18 +151,54 @@ export function estimarDemanda(
 
   console.log(`Se agruparon ${Object.keys(ventasPorProducto).length} productos únicos del mes seleccionado.`);
 
+  // Log the mapping being used for stock
+  console.log('Mapeo de columnas para stock:', {
+    productoId: mapeo.stock.productoId,
+    cantidad: mapeo.stock.cantidad,
+    stockReservado: mapeo.stock.stockReservado || 'No mapeado',
+    descripcion: mapeo.stock.descripcion || 'No mapeada'
+  });
+
   const stockPorProducto: { [key: string]: { cantidad: number, stockReservado: number, descripcion?: string } } = {};
-  stockData.forEach(row => {
+  stockData.forEach((row, index) => {
     const productoId = String(row[mapeo.stock.productoId]);
     const cantidad = Number(row[mapeo.stock.cantidad]);
-    const stockReservado = Number(mapeo.stock.stockReservado ? row[mapeo.stock.stockReservado] : 0);
-    const descripcion = mapeo.stock.descripcion ? String(row[mapeo.stock.descripcion]) : undefined;
+    const stockReservado = Number(mapeo.stock.stockReservado ? (row[mapeo.stock.stockReservado] || 0) : 0);
+    
+    // Get description if mapping exists and value is not empty
+    let descripcion = undefined;
+    if (mapeo.stock.descripcion && row[mapeo.stock.descripcion]) {
+      const rawDesc = String(row[mapeo.stock.descripcion]).trim();
+      descripcion = rawDesc !== '' ? rawDesc : undefined;
+    }
+    
+    if (index < 3) { // Log details for the first 3 rows of stock
+        console.log(`Fila de stock ${index}:`);
+        console.log(`- ID Producto: '${productoId}'`);
+        console.log(`- Cantidad: '${cantidad}'`);
+        console.log(`- Stock reservado: '${stockReservado}'`);
+        console.log(`- Descripción mapeada: '${mapeo.stock.descripcion || 'No mapeada'}'`);
+        console.log(`- Valor RAW de descripción: '${mapeo.stock.descripcion ? row[mapeo.stock.descripcion] : 'NO_COLUMN'}'`);
+        console.log(`- Tipo de valor RAW: '${mapeo.stock.descripcion ? typeof row[mapeo.stock.descripcion] : 'N/A'}'`);
+        console.log(`- Valor procesado de descripción: '${descripcion || 'VACÍA/NULA'}'`);
+        console.log(`- Todas las columnas de esta fila:`, Object.keys(row));
+    }
+    
     if (productoId && !isNaN(cantidad)) {
-      stockPorProducto[productoId] = {
-        cantidad: (stockPorProducto[productoId]?.cantidad || 0) + cantidad,
-        stockReservado: (stockPorProducto[productoId]?.stockReservado || 0) + stockReservado,
-        descripcion
-      };
+      if (!stockPorProducto[productoId]) {
+        stockPorProducto[productoId] = {
+          cantidad: 0,
+          stockReservado: 0,
+          descripcion: descripcion
+        };
+      }
+      stockPorProducto[productoId].cantidad += cantidad;
+      stockPorProducto[productoId].stockReservado += stockReservado;
+      
+      // Solo actualizar la descripción si no está vacía y no hay una descripción previa
+      if (!stockPorProducto[productoId].descripcion && descripcion) {
+        stockPorProducto[productoId].descripcion = descripcion;
+      }
     }
   });
 
@@ -162,9 +222,17 @@ export function estimarDemanda(
       ? `Comprar ${Math.ceil(demandaInsatisfecha)} unidades para 4 meses de cobertura.`
       : 'Stock adecuado.';
 
+    // Determinar la mejor descripción disponible
+    const descripcionFinal = ventaInfo.descripcion || stockInfo?.descripcion || 'Sin descripción';
+    
+    // Log para depuración si no hay descripción
+    if (!ventaInfo.descripcion && !stockInfo?.descripcion) {
+      console.warn(`Producto ${productoId} sin descripción en ambos archivos`);
+    }
+    
     return {
       productoId: productoId,
-      descripcion: ventaInfo.descripcion || stockInfo?.descripcion || 'Sin descripción',
+      descripcion: descripcionFinal,
       venta: ventaMensual,
       stock: stockDisponible,
       stockReservado: stockReservado,
