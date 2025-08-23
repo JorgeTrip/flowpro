@@ -103,26 +103,21 @@ export function ConfigStep() {
     }
   }, [ventasColumnas, stockColumnas, setMapeo]);
 
-  const handleMapeoChange = (
-    fileType: 'ventas' | 'stock',
-    campo: keyof typeof mapeo.ventas | keyof typeof mapeo.stock,
+  const handleMapeoChange = <T extends 'ventas' | 'stock'>(
+    fileType: T,
+    campo: keyof (typeof mapeo)[T],
     valor: string
   ) => {
     setMapeo(prev => {
-      const newState = { ...prev };
-
-      if (fileType === 'ventas' && campo in prev.ventas) {
-        newState.ventas = { ...prev.ventas, [campo]: valor };
-      } else if (fileType === 'stock' && campo in prev.stock) {
-        newState.stock = { ...prev.stock, [campo]: valor };
-      }
+      const newState = {
+        ...prev,
+        [fileType]: { ...prev[fileType], [campo]: valor },
+      };
 
       // Lógica de exclusión mutua para la descripción
-      if (campo === 'descripcion') {
+      if (campo === 'descripcion' && valor) {
         const otroFileType = fileType === 'ventas' ? 'stock' : 'ventas';
-        if (valor) {
-          newState[otroFileType].descripcion = '';
-        }
+        newState[otroFileType].descripcion = '';
       }
 
       return newState;

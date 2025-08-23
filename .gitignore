@@ -44,3 +44,6 @@ next-env.d.ts
 /2025 - Hoja de ruta/
 /inventario/
 /ventas/
+
+# Local Netlify folder
+.netlify
