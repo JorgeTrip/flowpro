@@ -37,11 +37,6 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
     );
 };
 
-interface Producto {
-  producto: string;
-  total: number;
-}
-
 
 interface TopProductosComponentProps {
     topProductosMasVendidos: ReporteResultados['topProductosMasVendidos'];

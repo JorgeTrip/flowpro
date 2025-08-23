@@ -83,11 +83,11 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
           DirectoIndirecto: ['directoindirecto', 'tipo venta'],
         };
 
-        columns.forEach((header, index) => {
+        columns.forEach((header) => {
           const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
           for (const key in expectedHeaders) {
             if (expectedHeaders[key].includes(normalizedHeader)) {
-              headerMapping[index] = key;
+              headerMapping[normalizedHeader] = key;
               break;
             }
           }
@@ -102,7 +102,8 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
           row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
             const header = columns[colNumber - 1];
             if (header) {
-              const mappedHeader = headerMapping[header.toLowerCase().trim()] || header;
+              const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
+              const mappedHeader = headerMapping[normalizedHeader] || header;
 
               let cellValue = cell.value;
               if (cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== '') {

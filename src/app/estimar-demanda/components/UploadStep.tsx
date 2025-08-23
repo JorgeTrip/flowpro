@@ -1,5 +1,4 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
-// 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
 import { useEstimarDemandaStore, ExcelRow } from '@/app/stores/estimarDemandaStore';
