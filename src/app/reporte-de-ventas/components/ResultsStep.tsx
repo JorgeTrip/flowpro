@@ -1,7 +1,7 @@
 // © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ArrowPathIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { useReporteVentasStore } from '@/app/stores/reporteVentasStore';
@@ -12,100 +12,20 @@ import { VentasPorVendedor } from './VentasPorVendedor';
 import { TopClientes } from './TopClientes';
 import { TopProductos } from './TopProductos';
 import { TopProductosPorCategoria } from './TopProductosPorCategoria';
+import { VentasMensuales } from './VentasMensuales';
+import { VentasMensualesTable } from './VentasMensualesTable';
+import { TopProductosPorCategoriaTable } from './TopProductosPorCategoriaTable';
+import { VentasPorRubroTable } from './VentasPorRubroTable';
+import { VentasPorZonaTable } from './VentasPorZonaTable';
+import { VentasPorVendedorTable } from './VentasPorVendedorTable';
+import { TopProductosTable } from './TopProductosTable';
+import { TopClientesTable } from './TopClientesTable';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
 const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
 
 // --- Sub-components ---
-
-const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: {
-  ventasPorMes: ReporteResultados['ventasPorMes'];
-  cantidadesPorMes: ReporteResultados['cantidadesPorMes'];
-}) => {
-  const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
-  const allMonths = useMemo(() => Object.keys(ventasPorMes), [ventasPorMes]);
-
-  const chartData = useMemo(() => {
-    return allMonths.map(mes => {
-      const importeData = ventasPorMes[mes] || { A: 0, X: 0, AX: 0 };
-      const cantidadData = cantidadesPorMes[mes] || { A: 0, X: 0, AX: 0 };
-      return {
-        name: mes,
-        importeA: importeData.A,
-        importeX: importeData.X,
-        importeAX: importeData.AX,
-        cantidadA: cantidadData.A,
-        cantidadX: cantidadData.X,
-        cantidadAX: cantidadData.AX,
-      };
-    });
-  }, [allMonths, ventasPorMes, cantidadesPorMes]);
-
-  interface TooltipEntry {
-    name: string;
-    value: number;
-    color: string;
-  }
-
-  interface TooltipProps {
-    active?: boolean;
-    payload?: TooltipEntry[];
-    label?: string;
-  }
-
-  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">
-          <p className="font-bold">{label}</p>
-          {payload.map((entry: TooltipEntry, index: number) => (
-            <p key={`item-${index}`} style={{ color: entry.color }}>
-              {`${entry.name}: ${metric === 'importe' ? formatCurrency(entry.value) : formatQuantity(entry.value)}`}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas Mensuales</h4>
-        <select
-          value={metric}
-          onChange={(e) => setMetric(e.target.value as 'importe' | 'cantidad')}
-          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-        >
-          <option value="importe">Importe</option>
-          <option value="cantidad">Cantidad</option>
-        </select>
-      </div>
-      <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 50 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-          <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} interval={0} stroke="#9ca3af" />
-          <YAxis stroke="#9ca3af" tickFormatter={(value) => metric === 'importe' ? `$${(Number(value) / 1000000).toFixed(1)}M` : `${(Number(value) / 1000).toFixed(0)}k`} />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.2)' }} />
-          <Legend wrapperStyle={{ paddingTop: '40px' }} />
-          {metric === 'importe' ? (
-            <>
-              <Bar dataKey="importeA" stackId="a" fill="#3b82f6" name="Importe A" />
-              <Bar dataKey="importeX" stackId="a" fill="#10b981" name="Importe X" />
-            </>
-          ) : (
-            <>
-              <Bar dataKey="cantidadA" stackId="b" fill="#8b5cf6" name="Cantidad A" />
-              <Bar dataKey="cantidadX" stackId="b" fill="#ec4899" name="Cantidad X" />
-            </>
-          )}
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
 
 
 // --- Main Component ---
@@ -132,11 +52,28 @@ export function ResultsStep() {
   const TabButton = ({ tab, label }: { tab: 'graficos' | 'tablas'; label: string }) => (
     <button
       onClick={() => setActiveTab(tab)}
-      className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors ${
+      className={`px-6 py-3 text-sm font-medium transition-all duration-200 rounded-t-lg ${
         activeTab === tab
-          ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+          ? 'bg-blue-400 dark:bg-blue-400 text-white border-b-4 border-blue-600 dark:border-blue-300 shadow-lg shadow-blue-500/50 dark:shadow-blue-400/50'
+          : 'bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-shadow-sm hover:shadow-lg'
       }`}
+      style={activeTab !== tab ? {
+        textShadow: 'none',
+        transition: 'all 0.2s ease-in-out'
+      } : {
+        boxShadow: '0 10px 25px -3px rgba(59, 130, 246, 0.5), 0 4px 6px -2px rgba(59, 130, 246, 0.3)',
+        transition: 'all 0.2s ease-in-out'
+      }}
+      onMouseEnter={(e) => {
+        if (activeTab !== tab) {
+          e.currentTarget.style.textShadow = '0 2px 4px rgba(0, 0, 0, 0.3)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (activeTab !== tab) {
+          e.currentTarget.style.textShadow = 'none';
+        }
+      }}
     >
       {label}
     </button>
@@ -171,119 +108,79 @@ export function ResultsStep() {
             {activeTab === 'graficos' ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <VentasMensuales ventasPorMes={resultados.ventasPorMes} cantidadesPorMes={resultados.cantidadesPorMes} />
+                <VentasPorVendedor ventasPorVendedor={resultados.ventasPorVendedor} cantidadesPorVendedor={resultados.cantidadesPorVendedor} />
                 <VentasPorRubro ventasPorRubro={resultados.ventasPorRubro} cantidadesPorRubro={resultados.cantidadesPorRubro} />
                 <VentasPorZona ventasPorZona={resultados.ventasPorZona} cantidadesPorZona={resultados.cantidadesPorZona} />
-                <VentasPorVendedor ventasPorVendedor={resultados.ventasPorVendedor} cantidadesPorVendedor={resultados.cantidadesPorVendedor} />
+                <TopProductos
+                  topProductosMasVendidos={resultados.topProductosMasVendidos}
+                  topProductosMasVendidosPorImporte={resultados.topProductosMasVendidosPorImporte}
+                  topProductosMenosVendidos={resultados.topProductosMenosVendidos}
+                />
                 <TopClientes 
                   topClientesMinoristas={resultados.topClientesMinoristas}
                   topClientesDistribuidores={resultados.topClientesDistribuidores}
                   topClientesMinoristasPorCantidad={resultados.topClientesMinoristasPorCantidad}
                   topClientesDistribuidoresPorCantidad={resultados.topClientesDistribuidoresPorCantidad}
                 />
-                <TopProductos
-                  topProductosMasVendidos={resultados.topProductosMasVendidos}
-                  topProductosMasVendidosPorImporte={resultados.topProductosMasVendidosPorImporte}
-                  topProductosMenosVendidos={resultados.topProductosMenosVendidos}
-                />
-                <TopProductosPorCategoria
-                  topProductosPorCategoriaPorCantidad={resultados.topProductosPorCategoriaPorCantidad}
-                  topProductosPorCategoriaPorImporte={resultados.topProductosPorCategoriaPorImporte}
-                />
+                <div className="lg:col-span-2">
+                  {(() => {
+                    console.log('🔍 ResultsStep - resultados completos:', resultados);
+                    console.log('🔍 ResultsStep - topProductosPorCategoriaPorCantidad:', resultados.topProductosPorCategoriaPorCantidad);
+                    console.log('🔍 ResultsStep - topProductosPorCategoriaPorImporte:', resultados.topProductosPorCategoriaPorImporte);
+                    return null;
+                  })()}
+                  <TopProductosPorCategoria
+                    topProductosPorCategoria={resultados.topProductosPorCategoriaPorCantidad}
+                    topProductosPorCategoriaImporte={resultados.topProductosPorCategoriaPorImporte}
+                  />
+                </div>
               </div>
             ) : (
               <div className="space-y-8">
                 {/* Tablas de datos */}
                 <div className="grid grid-cols-1 gap-8">
-                  {/* Tabla de Ventas por Mes */}
-                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3">
-                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas Mensuales</h4>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Mes</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe A</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe X</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad A</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad X</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                          {Object.entries(resultados.ventasPorMes).map(([mes, data]) => (
-                            <tr key={mes}>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{mes}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.A)}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.X)}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorMes[mes]?.A || 0)}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorMes[mes]?.X || 0)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  {/* Tabla de Ventas Mensuales Interactiva */}
+                  <VentasMensualesTable 
+                    ventasPorMes={resultados.ventasPorMes}
+                    cantidadesPorMes={resultados.cantidadesPorMes}
+                  />
 
-                  {/* Tabla de Ventas por Rubro */}
-                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3">
-                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas por Rubro</h4>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Rubro</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe A</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe X</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad A</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad X</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                          {Object.entries(resultados.ventasPorRubro).map(([rubro, data]) => (
-                            <tr key={rubro}>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{rubro || 'Sin rubro'}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.A)}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(data.X)}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorRubro[rubro]?.A || 0)}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(resultados.cantidadesPorRubro[rubro]?.X || 0)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  {/* Tabla de Top Productos por Categoría Interactiva */}
+                  <TopProductosPorCategoriaTable 
+                    topProductosPorCategoria={resultados.topProductosPorCategoriaPorCantidad}
+                    topProductosPorCategoriaImporte={resultados.topProductosPorCategoriaPorImporte}
+                  />
 
-                  {/* Tabla de Top Productos */}
-                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3">
-                      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top Productos Más Vendidos</h4>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Posición</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Artículo</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Cantidad</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Importe</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                          {resultados.topProductosMasVendidos.map((producto, index) => (
-                            <tr key={producto.articulo}>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{index + 1}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{producto.articulo}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatQuantity(producto.cantidad)}</td>
-                              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{formatCurrency(producto.importe)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  {/* Tabla de Ventas por Rubro Interactiva */}
+                  <VentasPorRubroTable 
+                    ventasPorRubro={resultados.ventasPorRubro}
+                    cantidadesPorRubro={resultados.cantidadesPorRubro}
+                  />
+
+                  {/* Tabla de Ventas por Zona Interactiva */}
+                  <VentasPorZonaTable 
+                    ventasPorZona={resultados.ventasPorZona}
+                    cantidadesPorZona={resultados.cantidadesPorZona}
+                  />
+
+                  {/* Tabla de Ventas por Vendedor Interactiva */}
+                  <VentasPorVendedorTable 
+                    ventasPorVendedor={resultados.ventasPorVendedor}
+                    cantidadesPorVendedor={resultados.cantidadesPorVendedor}
+                  />
+
+                  {/* Tabla de Top Productos Interactiva */}
+                  <TopProductosTable 
+                    topProductosMasVendidos={resultados.topProductosMasVendidos}
+                    topProductosMenosVendidos={resultados.topProductosMenosVendidos}
+                  />
+
+                  {/* Tabla de Top Clientes Interactiva */}
+                  <TopClientesTable 
+                    topClientesMinoristas={resultados.topClientesMinoristas}
+                    topClientesDistribuidores={resultados.topClientesDistribuidores}
+                  />
+
                 </div>
               </div>
             )}

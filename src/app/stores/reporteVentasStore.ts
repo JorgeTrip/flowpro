@@ -75,28 +75,33 @@ export const useReporteVentasStore = create<ReporteVentasState>()((set, get) => 
     setTimeout(() => {
       try {
         const mapeo = configuracion.mapeo;
-        const ventasProcesadas: Venta[] = ventasData.map(row => {
-          const venta: Venta = {
-            Periodo: String(row[mapeo.Periodo!] || ''),
-            Fecha: String(row[mapeo.Fecha!] || ''),
-            TipoComprobante: String(row[mapeo.TipoComprobante!] || ''),
-            NroComprobante: String(row[mapeo.NroComprobante!] || ''),
-            ReferenciaVendedor: String(row[mapeo.ReferenciaVendedor!] || ''),
-            RazonSocial: String(row[mapeo.RazonSocial!] || ''),
-            Cliente: String(row[mapeo.Cliente!] || ''),
-            Direccion: String(row[mapeo.Direccion!] || ''),
-            Articulo: String(row[mapeo.Articulo!] || ''),
-            Descripcion: String(row[mapeo.Descripcion!] || ''),
-            Cantidad: Number(row[mapeo.Cantidad!] || 0),
-            PrecioUnitario: Number(row[mapeo.PrecioUnitario!] || 0),
-            PrecioTotal: Number(row[mapeo.PrecioTotal!] || 0),
-            Total: Number(row[mapeo.Total!] || 0),
-            TotalCIVA: Number(row[mapeo.TotalCIVA!] || 0),
-            DirectoIndirecto: String(row[mapeo.DirectoIndirecto!] || ''),
-            DescRubro: String(row[mapeo.DescRubro!] || ''),
-            DescripcionZona: String(row[mapeo.DescripcionZona!] || ''),
+        const ventasProcesadas: Venta[] = ventasData.map((row: ExcelRow) => {
+          // Fix para descripción: buscar tanto con tilde como sin tilde
+          let descripcion = String(row[mapeo.Descripcion || ''] || '');
+          if (!descripcion && mapeo.Descripcion === 'Descripción') {
+            descripcion = String(row['Descripcion'] || ''); // Sin tilde como fallback
+          }
+          
+          return {
+            Periodo: String(row[mapeo.Periodo || ''] || ''),
+            Fecha: String(row[mapeo.Fecha || ''] || ''),
+            TipoComprobante: String(row[mapeo.TipoComprobante || ''] || ''),
+            NroComprobante: String(row[mapeo.NroComprobante || ''] || ''),
+            ReferenciaVendedor: String(row[mapeo.ReferenciaVendedor || ''] || ''),
+            RazonSocial: String(row[mapeo.RazonSocial || ''] || ''),
+            Cliente: String(row[mapeo.Cliente || ''] || ''),
+            Direccion: String(row[mapeo.Direccion || ''] || ''),
+            Articulo: String(row[mapeo.Articulo || ''] || ''),
+            Descripcion: descripcion,
+            Cantidad: Number(row[mapeo.Cantidad || '']) || 0,
+            PrecioUnitario: Number(row[mapeo.PrecioUnitario || '']) || 0,
+            PrecioTotal: Number(row[mapeo.PrecioTotal || '']) || 0,
+            Total: Number(row[mapeo.Total || '']) || 0,
+            TotalCIVA: Number(row[mapeo.TotalCIVA || '']) || 0,
+            DirectoIndirecto: String(row[mapeo.DirectoIndirecto || ''] || ''),
+            DescRubro: String(row[mapeo.DescRubro || ''] || ''),
+            DescripcionZona: String(row[mapeo.DescripcionZona || ''] || ''),
           };
-          return venta;
         });
 
         const nuevosResultados = generarReporte(ventasProcesadas);

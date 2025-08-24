@@ -49,6 +49,8 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
         Cliente: venta.Cliente,
         Articulo: venta.Articulo,
         Descripcion: venta.Descripcion,
+        'Descripcion length': venta.Descripcion?.length || 0,
+        'Descripcion type': typeof venta.Descripcion,
         Cantidad: venta.Cantidad,
         PrecioTotal: venta.PrecioTotal,
         DescripcionZona: venta.DescripcionZona,
@@ -57,6 +59,16 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
         DirectoIndirecto: venta.DirectoIndirecto
       });
     });
+    
+    // Verificar si hay alguna venta con descripción no vacía
+    const ventasConDescripcion = ventas.filter(v => v.Descripcion && v.Descripcion.trim().length > 0);
+    console.log(`🔍 Ventas con descripción no vacía: ${ventasConDescripcion.length} de ${ventas.length}`);
+    if (ventasConDescripcion.length > 0) {
+      console.log("🔍 Ejemplo de venta con descripción:", {
+        Articulo: ventasConDescripcion[0].Articulo,
+        Descripcion: ventasConDescripcion[0].Descripcion
+      });
+    }
   }
 
   const mesesConDatos = obtenerMesesConDatos(ventas);
@@ -90,6 +102,7 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
   console.log("  - Ventas por Rubro (primeros 3):", Object.fromEntries(Object.entries(resultado.ventasPorRubro).slice(0, 3)));
   console.log("  - Top Clientes Minoristas (primeros 3):", resultado.topClientesMinoristas.slice(0, 3));
   console.log("  - Top Productos Mas Vendidos (primeros 3):", resultado.topProductosMasVendidos.slice(0, 3));
+  console.log("  - Top Productos Mas Vendidos Por Importe (primeros 3):", resultado.topProductosMasVendidosPorImporte.slice(0, 3));
   console.log("  - Top Productos por Categoría (Cantidad) (primera categoría):", resultado.topProductosPorCategoriaPorCantidad.slice(0, 1));
   console.log("=== FINALIZANDO GENERACIÓN DE REPORTE DE VENTAS ===");
 
@@ -412,14 +425,66 @@ function topProductosMasVendidosImporte(
   ventasFiltradas.forEach(v => {
     if (!v.Articulo) return;
     if (!map[v.Articulo]) {
-      map[v.Articulo] = { total: 0, descripcion: v.Descripcion };
+      map[v.Articulo] = { total: 0, descripcion: v.Descripcion || '' };
     }
     map[v.Articulo].total += v.PrecioTotal;
+    // Actualizar descripción si la actual está vacía y la nueva no
+    if (!map[v.Articulo].descripcion && v.Descripcion) {
+      map[v.Articulo].descripcion = v.Descripcion;
+    }
   });
-  return Object.entries(map)
+  
+  const resultado = Object.entries(map)
     .sort((a, b) => b[1].total - a[1].total)
     .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, total: data.total }));
+    
+  console.log('🔍 topProductosMasVendidosImporte - primeros 3 resultados:', resultado.slice(0, 3));
+  return resultado;
+}
+
+// Mapeo de categorías según el código de artículo
+const categorias: Record<string, string> = {
+  '13': 'ACEITE DE OLIVA',
+  '01': 'ACEITE ESENCIAL',
+  '22': 'ACEITE OLIVA/ACETO',
+  '03': 'AZUCAR',
+  '21': 'BLEND',
+  '04': 'CARAMELOS',
+  '05': 'COSMETICA',
+  '06': 'EDULCORANTE',
+  '24': 'GIN TONIC',
+  '07': 'HIERBAS FRACCIONADA',
+  '08': 'INFUSIONES',
+  '09': 'JALEA - PROPOLEO',
+  '10': 'LEVADURA',
+  '20': 'LINEA MUJERES',
+  '11': 'MERMELADA',
+  '12': 'MIEL',
+  '16': 'S. FRASCO',
+  '14': 'SAHUMERIO',
+  '15': 'SALSA DE SOJA',
+  '17': 'TINTURA MADRE',
+  '02': 'TM ANDINO',
+  '18': 'VARIOS',
+  '19': 'YERBA MATE'
+};
+
+/**
+ * Obtiene la categoría de un artículo según su código
+ */
+function obtenerCategoria(codigoArticulo: string): string {
+  if (!codigoArticulo) return 'OTROS';
+  
+  // Buscar el patrón de 2 dígitos al inicio del código
+  const match = codigoArticulo.match(/^(\d{2})/i);
+  if (match && match[1]) {
+    return categorias[match[1]] || 'OTROS';
+  }
+  
+  // Si no hay 2 dígitos al inicio, intentar extraer los primeros 2 caracteres
+  const prefijo = codigoArticulo.substring(0, 2);
+  return categorias[prefijo] || 'OTROS';
 }
 
 function topProductosPorCategoria(
@@ -429,7 +494,13 @@ function topProductosPorCategoria(
   mesesConDatos: string[] = [],
   sortBy: 'cantidad' | 'importe' = 'cantidad'
 ) {
+  console.log('🔍 topProductosPorCategoria - Iniciando función');
+  console.log('🔍 topProductosPorCategoria - ventas.length:', ventas.length);
+  console.log('🔍 topProductosPorCategoria - filtroMes:', filtroMes);
+  console.log('🔍 topProductosPorCategoria - sortBy:', sortBy);
+  
   const ventasFiltradas = filtrarVentasPorMes(ventas, filtroMes, mesesConDatos);
+  console.log('🔍 topProductosPorCategoria - ventasFiltradas.length:', ventasFiltradas.length);
 
   const categoriasMap: Record<string, { 
     productos: Record<string, { articulo: string; descripcion: string; cantidad: number; total: number; }>,
@@ -438,7 +509,11 @@ function topProductosPorCategoria(
   }> = {};
 
   ventasFiltradas.forEach(v => {
-    const categoria = v.DescRubro || 'Sin Categoría';
+    if (!v.Articulo) return;
+    
+    // Obtener categoría del artículo usando el código
+    const categoria = obtenerCategoria(v.Articulo);
+    
     if (!categoriasMap[categoria]) {
       categoriasMap[categoria] = { productos: {}, cantidadCategoria: 0, totalCategoria: 0 };
     }
@@ -453,11 +528,15 @@ function topProductosPorCategoria(
       };
     }
 
+    const importe = v.NroComprobante.startsWith('A') ? v.TotalCIVA : v.Total;
     categoriasMap[categoria].productos[v.Articulo].cantidad += v.Cantidad;
-    categoriasMap[categoria].productos[v.Articulo].total += v.PrecioTotal;
+    categoriasMap[categoria].productos[v.Articulo].total += importe;
     categoriasMap[categoria].cantidadCategoria += v.Cantidad;
-    categoriasMap[categoria].totalCategoria += v.PrecioTotal;
+    categoriasMap[categoria].totalCategoria += importe;
   });
+
+  console.log('🔍 topProductosPorCategoria - categoriasMap keys:', Object.keys(categoriasMap));
+  console.log('🔍 topProductosPorCategoria - categoriasMap:', categoriasMap);
 
   const resultado = Object.entries(categoriasMap).map(([categoria, data]) => {
     const productosArray = Object.values(data.productos);
@@ -474,14 +553,17 @@ function topProductosPorCategoria(
       totalCategoria: data.totalCategoria,
       productos: sortedProductos
     };
-  });
-
-  return resultado.sort((a, b) => {
+  }).sort((a, b) => {
     if (sortBy === 'cantidad') {
       return b.cantidadCategoria - a.cantidadCategoria;
     }
     return b.totalCategoria - a.totalCategoria;
   });
+
+  console.log('🔍 topProductosPorCategoria - resultado final:', resultado);
+  console.log('🔍 topProductosPorCategoria - resultado.length:', resultado.length);
+
+  return resultado;
 }
 
 function agruparPorVendedor(ventas: Venta[]) {
@@ -532,14 +614,22 @@ function topProductosMasVendidos(
   ventasFiltradas.forEach(v => {
     if (!v.Articulo) return;
     if (!map[v.Articulo]) {
-      map[v.Articulo] = { cantidad: 0, descripcion: v.Descripcion };
+      map[v.Articulo] = { cantidad: 0, descripcion: v.Descripcion || '' };
     }
     map[v.Articulo].cantidad += v.Cantidad;
+    // Actualizar descripción si la actual está vacía y la nueva no
+    if (!map[v.Articulo].descripcion && v.Descripcion) {
+      map[v.Articulo].descripcion = v.Descripcion;
+    }
   });
-  return Object.entries(map)
+  
+  const resultado = Object.entries(map)
     .sort((a, b) => b[1].cantidad - a[1].cantidad)
     .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, cantidad: data.cantidad }));
+    
+  console.log('🔍 topProductosMasVendidos - primeros 3 resultados:', resultado.slice(0, 3));
+  return resultado;
 }
 
 function topProductosMenosVendidos(

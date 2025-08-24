@@ -57,7 +57,16 @@ export default function DataPreviewTable({
                         : 'text-gray-900 dark:text-gray-100'
                     }`}
                   >
-                    {String(row[column] || '')}
+                    {(() => {
+                      let value = row[column];
+                      
+                      // Fix para columnas con tildes: buscar tanto con tilde como sin tilde
+                      if (value === undefined && column === 'Descripción') {
+                        value = row['Descripcion']; // Sin tilde
+                      }
+                      
+                      return String(value || '');
+                    })()}
                   </td>
                 ))}
               </tr>

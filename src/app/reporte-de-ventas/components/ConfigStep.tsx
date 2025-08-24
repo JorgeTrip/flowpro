@@ -42,7 +42,7 @@ export function ConfigStep() {
     generarReporte,
   } = useReporteVentasStore();
 
-  const [mapeo, setMapeo] = useState<{[key in keyof Venta]?: string}>({
+  const [mapeo, setMapeo] = useState({
     Periodo: '',
     Fecha: '',
     TipoComprobante: '',
@@ -63,49 +63,166 @@ export function ConfigStep() {
     DescripcionZona: '',
   });
 
+  const [isInitialMapping, setIsInitialMapping] = useState(true);
+
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const findDefaultColumn = (columns: string[], keywords: string[]): string => {
-      for (const keyword of keywords) {
-        const foundColumn = columns.find(col => col.toLowerCase().includes(keyword.toLowerCase()));
-        if (foundColumn) return foundColumn;
-      }
-      return '';
-    };
+    if (ventasColumnas.length > 0 && isInitialMapping) {
+      console.log('Ejecutando mapeo automático con columnas:', ventasColumnas);
+      
+      // Crear el mapeo automático directamente
+      const automaticMapping = {
+        Periodo: '',
+        Fecha: '',
+        TipoComprobante: '',
+        NroComprobante: '',
+        ReferenciaVendedor: '',
+        Articulo: '',
+        Descripcion: '',
+        Cantidad: '',
+        PrecioTotal: '',
+        Cliente: '',
+        RazonSocial: '',
+        TotalCIVA: '',
+        DescripcionZona: '',
+        DescRubro: '',
+        Direccion: '',
+        PrecioUnitario: '',
+        Total: '',
+        DirectoIndirecto: ''
+      };
+      
+      const usedColumns = new Set<string>();
+      
+      // Crear un mapa de todas las posibles coincidencias con su especificidad
+      const createMatchMap = () => {
+        const matches: Array<{field: string, column: string, specificity: number}> = [];
+        
+        const fieldMappings = [
+          { field: 'Fecha', keywords: ['fecha'] },
+          { field: 'Articulo', keywords: ['articulo', 'artículo', 'cod', 'cód', 'sku'] },
+          { field: 'Descripcion', keywords: ['descripcion', 'descripción'] },
+          { field: 'Cantidad', keywords: ['cantidad', 'cant'] },
+          { field: 'PrecioTotal', keywords: ['total', 'precio total', 'subtotal'] },
+          { field: 'Cliente', keywords: ['razon social', 'razón social', 'razon', 'razón', 'cliente'] },
+          { field: 'ReferenciaVendedor', keywords: ['vendedor', 'referencia'] },
+          { field: 'DescripcionZona', keywords: ['descripcion zona', 'descripción zona', 'zona'] },
+          { field: 'DescRubro', keywords: ['desc rubro', 'descripcion rubro', 'descripción rubro', 'rubro'] },
+          { field: 'Periodo', keywords: ['periodo', 'período'] },
+          { field: 'TipoComprobante', keywords: ['tipo', 'comprobante'] },
+          { field: 'NroComprobante', keywords: ['numero', 'nro'] },
+          { field: 'RazonSocial', keywords: ['razon social', 'razón social'] },
+          { field: 'Direccion', keywords: ['direccion', 'dirección'] },
+          { field: 'PrecioUnitario', keywords: ['precio unitario', 'unitario'] },
+          { field: 'Total', keywords: ['total'] },
+          { field: 'TotalCIVA', keywords: ['total c/iva', 'total con iva'] },
+          { field: 'DirectoIndirecto', keywords: ['directo', 'indirecto'] }
+        ];
 
-    if (ventasColumnas.length > 0) {
-      setMapeo(prev => ({
-        ...prev,
-        Periodo: prev.Periodo || findDefaultColumn(ventasColumnas, ['periodo', 'período']),
-        Fecha: prev.Fecha || findDefaultColumn(ventasColumnas, ['fecha']),
-        TipoComprobante: prev.TipoComprobante || findDefaultColumn(ventasColumnas, ['tipo', 'comprobante']),
-        NroComprobante: prev.NroComprobante || findDefaultColumn(ventasColumnas, ['numero', 'nro']),
-        ReferenciaVendedor: prev.ReferenciaVendedor || findDefaultColumn(ventasColumnas, ['vendedor', 'referencia']),
-        RazonSocial: prev.RazonSocial || findDefaultColumn(ventasColumnas, ['razon social', 'razón social']),
-        Cliente: prev.Cliente || findDefaultColumn(ventasColumnas, ['cliente']),
-        Direccion: prev.Direccion || findDefaultColumn(ventasColumnas, ['direccion', 'dirección']),
-        Articulo: prev.Articulo || findDefaultColumn(ventasColumnas, ['articulo', 'artículo', 'cod', 'cód', 'sku']),
-        Descripcion: prev.Descripcion || findDefaultColumn(ventasColumnas, ['descripcion', 'descripción']),
-        Cantidad: prev.Cantidad || findDefaultColumn(ventasColumnas, ['cantidad', 'cant']),
-        PrecioUnitario: prev.PrecioUnitario || findDefaultColumn(ventasColumnas, ['precio unitario', 'unitario']),
-        PrecioTotal: prev.PrecioTotal || findDefaultColumn(ventasColumnas, ['precio total', 'subtotal']),
-        Total: prev.Total || findDefaultColumn(ventasColumnas, ['total']),
-        TotalCIVA: prev.TotalCIVA || findDefaultColumn(ventasColumnas, ['total c/iva', 'total con iva']),
-        DirectoIndirecto: prev.DirectoIndirecto || findDefaultColumn(ventasColumnas, ['directo', 'indirecto']),
-        DescRubro: prev.DescRubro || findDefaultColumn(ventasColumnas, ['rubro']),
-        DescripcionZona: prev.DescripcionZona || findDefaultColumn(ventasColumnas, ['zona']),
-      }));
+        fieldMappings.forEach(({ field, keywords }) => {
+          keywords.forEach((keyword, keywordIndex) => {
+            ventasColumnas.forEach(column => {
+              const columnLower = column.toLowerCase();
+              const keywordLower = keyword.toLowerCase();
+              
+              if (columnLower.includes(keywordLower)) {
+                // Calcular especificidad: coincidencia exacta > coincidencia de palabras completas > coincidencia parcial
+                let specificity = 0;
+                
+                if (columnLower === keywordLower) {
+                  specificity = 1000; // Coincidencia exacta
+                } else if (columnLower.split(' ').includes(keywordLower) || keywordLower.split(' ').every(word => columnLower.includes(word))) {
+                  specificity = 500 + (keyword.split(' ').length * 10); // Coincidencia de palabras completas, más específico si tiene más palabras
+                } else {
+                  specificity = 100; // Coincidencia parcial
+                }
+                
+                // Penalizar por orden de keyword (primeras keywords tienen prioridad)
+                specificity -= keywordIndex;
+                
+                matches.push({ field, column, specificity });
+              }
+            });
+          });
+        });
+
+        // Ordenar por especificidad descendente
+        return matches.sort((a, b) => b.specificity - a.specificity);
+      };
+
+      const allMatches = createMatchMap();
+      console.log('Todas las coincidencias encontradas:', allMatches);
+
+      // Asignar las mejores coincidencias disponibles
+      const assignedFields = new Set<string>();
+      
+      allMatches.forEach(match => {
+        if (!usedColumns.has(match.column) && !assignedFields.has(match.field)) {
+          if (!automaticMapping[match.field as keyof typeof automaticMapping] || automaticMapping[match.field as keyof typeof automaticMapping] === '') {
+            console.log(`Asignando ${match.field} -> ${match.column} (especificidad: ${match.specificity})`);
+            (automaticMapping as any)[match.field] = match.column;
+            usedColumns.add(match.column);
+            assignedFields.add(match.field);
+          }
+        }
+      });
+
+      console.log('Mapeo final después de asignación automática:', automaticMapping);
+      console.log('Campo Cliente específicamente:', automaticMapping.Cliente);
+
+      // Aplicar el mapeo automático de una sola vez
+      setMapeo(automaticMapping);
+      setIsInitialMapping(false);
     }
-  }, [ventasColumnas]);
+  }, [ventasColumnas, isInitialMapping]);
 
   useEffect(() => {
-    const isMapeoReady = mapeo.Fecha && mapeo.Articulo && mapeo.Cantidad && mapeo.PrecioTotal;
+    console.log('Estado actual completo del mapeo:', mapeo);
+    const isMapeoReady = mapeo.Fecha && mapeo.Fecha !== '' && 
+                        mapeo.Articulo && mapeo.Articulo !== '' && 
+                        mapeo.Descripcion && mapeo.Descripcion !== '' &&
+                        mapeo.Cantidad && mapeo.Cantidad !== '' && 
+                        mapeo.PrecioTotal && mapeo.PrecioTotal !== '' &&
+                        mapeo.Cliente && mapeo.Cliente !== '' &&
+                        mapeo.ReferenciaVendedor && mapeo.ReferenciaVendedor !== '' &&
+                        mapeo.DescripcionZona && mapeo.DescripcionZona !== '' &&
+                        mapeo.DescRubro && mapeo.DescRubro !== '';
+    console.log('Validando mapeo completo:', { 
+      Fecha: mapeo.Fecha, 
+      Articulo: mapeo.Articulo, 
+      Descripcion: mapeo.Descripcion,
+      Cantidad: mapeo.Cantidad, 
+      PrecioTotal: mapeo.PrecioTotal,
+      Cliente: mapeo.Cliente,
+      ReferenciaVendedor: mapeo.ReferenciaVendedor,
+      DescripcionZona: mapeo.DescripcionZona,
+      DescRubro: mapeo.DescRubro,
+      isReady: !!isMapeoReady
+    });
     setIsReady(!!isMapeoReady);
   }, [mapeo]);
 
-  const handleMapeoChange = (campo: keyof Venta, valor: string) => {
-    setMapeo(prev => ({ ...prev, [campo]: valor }));
+  const handleMapeoChange = (field: string, value: string) => {
+    const newValue = value === 'Seleccionar columna...' ? '' : value;
+    
+    setMapeo(prev => {
+      const newMapeo = { ...prev };
+      
+      // Si se está asignando un valor que ya está en uso, limpiar el campo anterior
+      if (newValue) {
+        Object.keys(newMapeo).forEach(key => {
+          if (key !== field && (newMapeo as any)[key] === newValue) {
+            (newMapeo as any)[key] = '';
+          }
+        });
+      }
+      
+      // Asignar el nuevo valor
+      (newMapeo as any)[field] = newValue;
+      
+      return newMapeo;
+    });
   };
 
   const handleAnalizar = () => {
@@ -129,13 +246,14 @@ export function ConfigStep() {
                   title="Previsualización de Ventas"
                   previewData={ventasPreviewData as ExcelRow[]}
                   columns={ventasColumnas}
-                  highlightedColumns={Object.values(mapeo).filter((v): v is string => !!v)}
+                  highlightedColumns={Object.values(mapeo).filter((v): v is string => !!v && v !== '')}
                 />
               )}
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <SelectAsignacion label="Fecha" columnas={ventasColumnas} value={mapeo.Fecha || ''} onChange={(e) => handleMapeoChange('Fecha', e.target.value)} />
               <SelectAsignacion label="Artículo (SKU)" columnas={ventasColumnas} value={mapeo.Articulo || ''} onChange={(e) => handleMapeoChange('Articulo', e.target.value)} />
+              <SelectAsignacion label="Descripción" columnas={ventasColumnas} value={mapeo.Descripcion || ''} onChange={(e) => handleMapeoChange('Descripcion', e.target.value)} />
               <SelectAsignacion label="Cantidad" columnas={ventasColumnas} value={mapeo.Cantidad || ''} onChange={(e) => handleMapeoChange('Cantidad', e.target.value)} />
               <SelectAsignacion label="Precio Total" columnas={ventasColumnas} value={mapeo.PrecioTotal || ''} onChange={(e) => handleMapeoChange('PrecioTotal', e.target.value)} />
               <SelectAsignacion label="Cliente" columnas={ventasColumnas} value={mapeo.Cliente || ''} onChange={(e) => handleMapeoChange('Cliente', e.target.value)} />
@@ -164,7 +282,7 @@ export function ConfigStep() {
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p className="ml-3 text-sm font-medium text-yellow-800 dark:text-yellow-200">
-              ⚠️ Faltan campos obligatorios: Fecha, Artículo (SKU), Cantidad y Precio Total son requeridos para continuar.
+              ⚠️ Faltan campos obligatorios: Todos los campos (Fecha, Artículo, Descripción, Cantidad, Precio Total, Cliente, Vendedor, Zona y Rubro) son requeridos para continuar.
             </p>
           </div>
         )}

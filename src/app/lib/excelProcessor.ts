@@ -99,13 +99,28 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
           const rowData: ExcelRow = {};
           let hasValues = false;
 
-          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          // Procesar todas las columnas, incluso las vacías
+          for (let colNumber = 1; colNumber <= columns.length; colNumber++) {
             const header = columns[colNumber - 1];
             if (header) {
+              const cell = row.getCell(colNumber);
               const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
               const mappedHeader = headerMapping[normalizedHeader] || header;
 
               let cellValue = cell.value;
+              
+              // Debug logging para columna Descripción
+              if (header.toLowerCase().includes('descripci') && i <= 5) {
+                console.log(`Fila ${i}, Columna ${header}:`, {
+                  cellValue,
+                  cellType: typeof cellValue,
+                  cellText: cell.text,
+                  cellFormula: (cell as any).formula,
+                  cellResult: (cell as any).result,
+                  finalValue: cellValue === undefined ? '' : cellValue
+                });
+              }
+
               if (cellValue !== null && cellValue !== undefined && String(cellValue).trim() !== '') {
                 hasValues = true;
               }
@@ -115,25 +130,44 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
               } else if (typeof cellValue === 'object' && cellValue !== null && 'error' in cellValue) {
                 cellValue = '';
               } else if (typeof cellValue === 'object' && cellValue !== null && 'richText' in cellValue) {
-                cellValue = cellValue.richText.map(rt => rt.text).join('');
+                cellValue = (cellValue as any).richText.map((rt: any) => rt.text).join('');
               } else if (typeof cellValue === 'object' && cellValue !== null && 'hyperlink' in cellValue) {
-                cellValue = cellValue.text;
+                cellValue = (cellValue as any).text;
               } else if (typeof cellValue === 'object' && cellValue !== null && ('formula' in cellValue || 'sharedFormula' in cellValue)) {
                 cellValue = processFormulaResult((cellValue as FormulaResult).result);
               }
 
+              // Usar cell.text como fallback si cellValue está vacío pero hay texto visible
+              if ((!cellValue || cellValue === '') && cell.text && cell.text.trim() !== '') {
+                cellValue = cell.text;
+              }
+
               if (typeof cellValue === 'object' && cellValue !== null) {
-                rowData[mappedHeader] = '';
+                // Para objetos, intentar extraer el texto
+                if ('richText' in cellValue) {
+                  rowData[mappedHeader] = (cellValue as any).richText.map((rt: any) => rt.text).join('');
+                } else if ('text' in cellValue) {
+                  rowData[mappedHeader] = (cellValue as any).text;
+                } else {
+                  rowData[mappedHeader] = String(cellValue);
+                }
               } else {
                 rowData[mappedHeader] = cellValue === undefined ? '' : cellValue;
               }
+              
+              // Debug adicional para previsualización
+              if (header.toLowerCase().includes('descripci') && i <= 5) {
+                console.log(`Final rowData[${mappedHeader}]:`, rowData[mappedHeader]);
+              }
             }
-          });
+          }
 
           if (hasValues) {
             data.push(rowData);
-            if (previewData.length < 2) {
-              previewData.push(rowData);
+            if (previewData.length < 5) {
+              const previewRow = { ...rowData };
+              console.log(`PreviewData row ${previewData.length + 1}:`, previewRow);
+              previewData.push(previewRow);
             }
           }
         }

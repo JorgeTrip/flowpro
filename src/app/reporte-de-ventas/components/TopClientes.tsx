@@ -1,13 +1,43 @@
 // © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useMemo, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
-const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
+const formatCurrency = (value: number, compacto: boolean = false) => {
+  if (compacto) {
+    if (value >= 1000000) {
+      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      });
+      return `$${valorFormateado} mill.`;
+    } else if (value >= 1000) {
+      return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+    } else {
+      return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+    }
+  } else {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
+  }
+};
+const formatQuantity = (value: number, compacto: boolean = false) => {
+  if (compacto) {
+    if (value >= 1000000) {
+      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      });
+      return `${valorFormateado} mill.`;
+    } else {
+      return value.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+    }
+  } else {
+    return new Intl.NumberFormat('es-AR').format(value);
+  }
+};
 const formatName = (name: string) => name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 
 
@@ -27,6 +57,24 @@ export const TopClientes = ({
     const [tipoCliente, setTipoCliente] = useState<'Minoristas' | 'Distribuidores'>('Distribuidores');
     const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
     const [numClientes, setNumClientes] = useState<number>(10);
+    const [orden, setOrden] = useState<'mas' | 'menos'>('mas');
+    const [filtroMeses, setFiltroMeses] = useState<'todos' | 'conDatos' | 'individual'>('todos');
+    const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
+    const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
+    
+    const meses = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    
+    // Simular meses con datos (en una implementación real esto vendría de los datos)
+    useEffect(() => {
+        // Por ahora simulamos que todos los meses tienen datos
+        setMesesConDatos(meses);
+        if (filtroMeses === 'individual' && !mesSeleccionado) {
+            setMesSeleccionado(meses[0]);
+        }
+    }, [filtroMeses, mesSeleccionado]);
 
     const data = useMemo(() => {
         let sourceData;
@@ -36,14 +84,22 @@ export const TopClientes = ({
             sourceData = metric === 'importe' ? topClientesMinoristas : topClientesMinoristasPorCantidad;
         }
 
-        return sourceData
+        let processedData = sourceData
             .map((item: { cliente: string; total: number }) => ({
                 name: formatName(item.cliente),
                 value: item.total,
-            }))
-            .slice(0, numClientes);
+            }));
+            
+        // Aplicar ordenamiento
+        if (orden === 'menos') {
+            processedData = processedData.sort((a, b) => a.value - b.value);
+        } else {
+            processedData = processedData.sort((a, b) => b.value - a.value);
+        }
+            
+        return processedData.slice(0, numClientes);
 
-    }, [tipoCliente, metric, numClientes, topClientesDistribuidores, topClientesDistribuidoresPorCantidad, topClientesMinoristas, topClientesMinoristasPorCantidad]);
+    }, [tipoCliente, metric, numClientes, orden, topClientesDistribuidores, topClientesDistribuidoresPorCantidad, topClientesMinoristas, topClientesMinoristasPorCantidad]);
 
     const maxValue = useMemo(() => {
         if (data.length === 0) return 0;
@@ -72,7 +128,7 @@ export const TopClientes = ({
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
                 <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top Clientes</h4>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 flex-wrap">
                     <select
                         value={tipoCliente}
                         onChange={(e) => setTipoCliente(e.target.value as 'Minoristas' | 'Distribuidores')}
@@ -81,14 +137,7 @@ export const TopClientes = ({
                         <option value="Distribuidores">Distribuidores</option>
                         <option value="Minoristas">Minoristas</option>
                     </select>
-                    <select
-                        value={metric}
-                        onChange={(e) => setMetric(e.target.value as 'importe' | 'cantidad')}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value="importe">Importe</option>
-                        <option value="cantidad">Cantidad</option>
-                    </select>
+                    
                     <select
                         value={numClientes}
                         onChange={(e) => setNumClientes(Number(e.target.value))}
@@ -99,21 +148,89 @@ export const TopClientes = ({
                         <option value={15}>Top 15</option>
                         <option value={20}>Top 20</option>
                     </select>
+                    
+                    <select
+                        value={metric}
+                        onChange={(e) => setMetric(e.target.value as 'importe' | 'cantidad')}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    >
+                        <option value="importe">Importe</option>
+                        <option value="cantidad">Cantidad</option>
+                    </select>
+                    
+                    <select
+                        value={orden}
+                        onChange={(e) => setOrden(e.target.value as 'mas' | 'menos')}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-36 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    >
+                        <option value="mas">Más vendidos</option>
+                        <option value="menos">Menos vendidos</option>
+                    </select>
+                    
+                    <div className="border-l border-gray-300 dark:border-gray-600 h-8 mx-2"></div>
+                    
+                    <select
+                        value={filtroMeses}
+                        onChange={(e) => {
+                            setFiltroMeses(e.target.value as 'todos' | 'conDatos' | 'individual');
+                            if (e.target.value === 'individual' && mesesConDatos.length > 0 && !mesSeleccionado) {
+                                setMesSeleccionado(mesesConDatos[0]);
+                            }
+                        }}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-44 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    >
+                        <option value="todos">Todos los meses</option>
+                        <option value="conDatos">Solo meses con datos</option>
+                        <option value="individual">Seleccionar mes</option>
+                    </select>
+                    
+                    {filtroMeses === 'individual' && (
+                        <select
+                            value={mesSeleccionado || meses[0]}
+                            onChange={(e) => setMesSeleccionado(e.target.value)}
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-36 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                            {meses.map(mes => (
+                                <option key={mes} value={mes}>
+                                    {mes}
+                                </option>
+                            ))}
+                        </select>
+                    )}
                 </div>
             </div>
             <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={data} layout="vertical" margin={{ top: 5, right: 100, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" domain={[0, maxValue]} tickFormatter={(value) => metric === 'importe' ? formatCurrency(value as number) : formatQuantity(value as number)} />
-                    <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
                     <defs>
                         <linearGradient id="colorBarCliente" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="#82ca9d" stopOpacity={0.8}/>
                             <stop offset="100%" stopColor="#8884d8" stopOpacity={0.9}/>
                         </linearGradient>
+                        <filter id="shadowClientes" x="-10%" y="-10%" width="120%" height="130%">
+                            <feOffset result="offOut" in="SourceGraphic" dx="3" dy="3" />
+                            <feColorMatrix result="matrixOut" in="offOut" type="matrix"
+                                values="0.2 0 0 0 0 0 0.2 0 0 0 0 0 0.2 0 0 0 0 0 1 0" />
+                            <feGaussianBlur result="blurOut" in="matrixOut" stdDeviation="3" />
+                            <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+                        </filter>
                     </defs>
-                    <Bar dataKey="value" name={metric === 'importe' ? 'Ventas' : 'Cantidad'} fill="url(#colorBarCliente)" radius={[0, 4, 4, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                        type="number" 
+                        domain={[0, maxValue]} 
+                        tickFormatter={(value) => metric === 'importe' ? formatCurrency(value as number, true) : formatQuantity(value as number, true)} 
+                    />
+                    <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar 
+                        dataKey="value" 
+                        name={metric === 'importe' ? 'Ventas' : 'Cantidad'} 
+                        fill="url(#colorBarCliente)" 
+                        radius={[0, 4, 4, 0]}
+                        stroke="#6eb58a"
+                        strokeWidth={1}
+                        filter="url(#shadowClientes)"
+                    />
                 </BarChart>
             </ResponsiveContainer>
         </div>
