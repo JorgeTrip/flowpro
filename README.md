@@ -13,6 +13,20 @@ FlowPro es una suite de herramientas empresariales desarrollada en Next.js que a
 - **Visualización de Resultados**: Gráficos interactivos y tablas detalladas
 - **Sugerencias Inteligentes**: Recomendaciones automáticas de compra basadas en el análisis
 
+### Módulo de Reporte de Ventas
+- **Análisis por Rubro**: Visualización detallada de ventas por categoría
+- **Desempeño por Zona**: Comparativa de ventas entre diferentes zonas geográficas
+- **Tablas Interactivas**: Funcionalidades avanzadas de filtrado y ordenamiento
+  - Filtros por período (todos, con datos, específicos)
+  - Selector múltiple de meses
+  - Alternancia entre importe y cantidad
+  - Exportación a CSV personalizada
+- **Gráficos Avanzados**:
+  - Efectos 3D con sombras SVG
+  - Gradientes y bordes redondeados
+  - Tooltips informativos
+  - Formato compacto para números grandes
+
 ### Características de la Interfaz
 - **Tema Claro/Oscuro**: Cambio dinámico entre modos con tonos de gris personalizados
 - **Diseño Responsivo**: Optimizado para desktop y móvil
@@ -72,23 +86,45 @@ npm run lint     # Linting con ESLint
 ```
 src/
 ├── app/
-│   ├── components/          # Componentes reutilizables
-│   │   ├── layout/         # Header, Sidebar, Footer, etc.
-│   │   └── business/       # Componentes de lógica de negocio
-│   ├── estimar-demanda/    # Módulo de estimación de demanda
-│   │   ├── components/     # Componentes específicos del módulo
-│   │   └── page.tsx        # Página principal del módulo
-│   ├── lib/                # Utilidades y lógica de negocio
-│   ├── stores/             # Estado global con Zustand
-│   └── globals.css         # Estilos globales
+│   ├── components/             # Componentes reutilizables
+│   │   ├── layout/            # Header, Sidebar, Footer, etc.
+│   │   └── business/          # Componentes de lógica de negocio
+│   ├── estimar-demanda/       # Módulo de estimación de demanda
+│   │   ├── components/        # Componentes específicos del módulo
+│   │   └── page.tsx           # Página principal del módulo
+│   ├── reporte-de-ventas/     # Módulo de reporte de ventas
+│   │   ├── components/        # Componentes del reporte
+│   │   │   ├── charts/       # Gráficos interactivos
+│   │   │   └── tables/       # Tablas con filtros avanzados
+│   │   └── page.tsx          # Página principal del reporte
+│   ├── lib/                   # Utilidades y lógica de negocio
+│   ├── stores/                # Estado global con Zustand
+│   └── globals.css            # Estilos globales
 ```
 
-## 🎯 Uso del Módulo de Estimación de Demanda
+## 🎯 Módulos Disponibles
 
+### Estimación de Demanda
 1. **Paso 1**: Cargar archivo de ventas del año anterior (Excel)
 2. **Paso 2**: Cargar archivo de stock actual (Excel)
 3. **Paso 3**: Configurar mapeo de columnas (ID Producto, Cantidad)
 4. **Paso 4**: Ejecutar análisis y revisar resultados
+
+### Reporte de Ventas
+1. **Selección de Período**:
+   - Filtros por rango de fechas
+   - Selección de meses específicos
+   - Filtrado por disponibilidad de datos
+
+2. **Visualización de Datos**:
+   - Gráficos interactivos con zoom y tooltips
+   - Tablas con ordenamiento y filtrado avanzado
+   - Alternancia entre diferentes métricas (importe/cantidad)
+
+3. **Exportación**:
+   - Generación de reportes en CSV
+   - Configuración de columnas a exportar
+   - Mantenimiento de formato y estilos
 
 ### Formato de Archivos Excel
 
