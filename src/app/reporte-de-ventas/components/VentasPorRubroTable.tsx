@@ -16,7 +16,7 @@ export const VentasPorRubroTable = ({ ventasPorRubro, cantidadesPorRubro }: Vent
     // Obtener todos los rubros disponibles
     const todosLosRubros = useMemo(() => {
         const rubros = new Set<string>();
-        Object.entries(ventasPorRubro).forEach(([rubro, subrubros]) => {
+        Object.entries(ventasPorRubro).forEach(([_rubro, subrubros]) => {
             Object.keys(subrubros).forEach(subrubro => {
                 rubros.add(subrubro || 'Sin rubro');
             });
@@ -43,11 +43,11 @@ export const VentasPorRubroTable = ({ ventasPorRubro, cantidadesPorRubro }: Vent
             totalCantidad: number;
         }> = [];
 
-        Object.entries(ventasPorRubro).forEach(([rubro, subrubros]) => {
+        Object.entries(ventasPorRubro).forEach(([_rubro, subrubros]) => {
             Object.entries(subrubros).forEach(([subrubro, data]) => {
                 const nombreRubro = subrubro || 'Sin rubro';
                 if (rubrosSeleccionados.includes(nombreRubro)) {
-                    const cantidades = cantidadesPorRubro[rubro]?.[subrubro] || { A: 0, X: 0 };
+                    const cantidades = cantidadesPorRubro[_rubro]?.[subrubro] || { A: 0, X: 0 };
                     datos.push({
                         rubro: nombreRubro,
                         importeA: data.A || 0,

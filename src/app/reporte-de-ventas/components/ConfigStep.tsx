@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useReporteVentasStore, ExcelRow } from '@/app/stores/reporteVentasStore';
-import { Venta } from '../lib/types';
+// import { Venta } from '../lib/types';
 import DataPreviewTable from './DataPreviewTable';
 
 // Icono de tilde para confirmación visual
@@ -161,7 +161,7 @@ export function ConfigStep() {
         if (!usedColumns.has(match.column) && !assignedFields.has(match.field)) {
           if (!automaticMapping[match.field as keyof typeof automaticMapping] || automaticMapping[match.field as keyof typeof automaticMapping] === '') {
             console.log(`Asignando ${match.field} -> ${match.column} (especificidad: ${match.specificity})`);
-            (automaticMapping as any)[match.field] = match.column;
+            (automaticMapping as Record<string, string>)[match.field] = match.column;
             usedColumns.add(match.column);
             assignedFields.add(match.field);
           }
@@ -212,14 +212,14 @@ export function ConfigStep() {
       // Si se está asignando un valor que ya está en uso, limpiar el campo anterior
       if (newValue) {
         Object.keys(newMapeo).forEach(key => {
-          if (key !== field && (newMapeo as any)[key] === newValue) {
-            (newMapeo as any)[key] = '';
+          if (key !== field && (newMapeo as Record<string, string>)[key] === newValue) {
+            (newMapeo as Record<string, string>)[key] = '';
           }
         });
       }
       
       // Asignar el nuevo valor
-      (newMapeo as any)[field] = newValue;
+      (newMapeo as Record<string, string>)[field] = newValue;
       
       return newMapeo;
     });

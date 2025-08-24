@@ -1,11 +1,9 @@
 // © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import React, { useState } from 'react';
 import { ArrowPathIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { useReporteVentasStore } from '@/app/stores/reporteVentasStore';
-import { ReporteResultados } from '@/app/lib/reportGenerator';
 import { VentasPorRubro } from './VentasPorRubro';
 import { VentasPorZona } from './VentasPorZona';
 import { VentasPorVendedor } from './VentasPorVendedor';
@@ -22,8 +20,18 @@ import { TopProductosTable } from './TopProductosTable';
 import { TopClientesTable } from './TopClientesTable';
 
 // --- Helper Functions ---
-const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
+const _formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value);
+};
+
+const _formatQuantity = (value: number) => {
+  return new Intl.NumberFormat('es-AR').format(value);
+};
 
 // --- Sub-components ---
 

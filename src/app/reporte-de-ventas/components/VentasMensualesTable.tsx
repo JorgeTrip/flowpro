@@ -13,10 +13,10 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
     const [mostrarCantidad, setMostrarCantidad] = useState<boolean>(false);
     const [mostrarTotales, setMostrarTotales] = useState<boolean>(true);
 
-    const meses = [
+    const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
+    ], []);
 
     // Filtrar meses con datos
     const mesesConDatos = useMemo(() => {
@@ -86,7 +86,7 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
         return value.toLocaleString('es-AR');
     };
 
-    const handleMesToggle = (mes: string) => {
+    const _handleMesToggle = (mes: string) => {
         setMesesSeleccionados(prev => 
             prev.includes(mes) 
                 ? prev.filter(m => m !== mes)
@@ -137,7 +137,7 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                         {/* Filtro de meses */}
                         <select
                             value={filtroMeses}
-                            onChange={(e) => setFiltroMeses(e.target.value as any)}
+                            onChange={(e) => setFiltroMeses(e.target.value as 'todos' | 'conDatos' | 'seleccionados')}
                             className="bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-40 p-2"
                         >
                             <option value="todos">Todos los meses</option>

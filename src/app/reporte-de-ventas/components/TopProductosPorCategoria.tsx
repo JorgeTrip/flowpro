@@ -2,8 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
-import { ReporteResultados } from '@/app/lib/reportGenerator';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
@@ -38,66 +37,22 @@ const formatQuantity = (value: number, compacto: boolean = false) => {
   }
 };
 
-// Componente personalizado para mostrar etiquetas con múltiples líneas
-const CustomizedLabel = (props: any) => {
-  const { x, y, width, height, index, value } = props;
-  
-  // Obtener el elemento de datos correspondiente
-  if (!props.data || !props.data[index]) return null;
-  const item = props.data[index];
-  
-  // Formatear valores según si es categoría o producto
-  let porcentaje = '';
-  let importeFormateado = '';
-  
-  if (item.isCategory) {
-    // Para categorías
-    porcentaje = `${item.porcentaje || '0.00'}% del total`;
-    importeFormateado = item.totalCategoria?.toLocaleString('es-AR', { 
-      style: 'currency', 
-      currency: 'ARS', 
-      maximumFractionDigits: 0 
-    }) || '$0';
-  } else {
-    // Para productos individuales
-    porcentaje = `${item.porcentaje || '0.00'}% de la categoría`;
-    importeFormateado = item.total?.toLocaleString('es-AR', { 
-      style: 'currency', 
-      currency: 'ARS', 
-      maximumFractionDigits: 0 
-    }) || '$0';
-  }
-  
-  return (
-    <g>
-      <text 
-        x={x + width + 8} 
-        y={y + height / 2 - 8} 
-        textAnchor="start" 
-        dominantBaseline="middle" 
-        fill={item.isCategory ? "#333" : "#666"}
-        fontSize={item.isCategory ? "12px" : "11px"}
-        fontWeight={item.isCategory ? "bold" : "normal"}
-      >
-        {porcentaje}
-      </text>
-      <text 
-        x={x + width + 8} 
-        y={y + height / 2 + 6} 
-        textAnchor="start" 
-        dominantBaseline="middle" 
-        fill="#999"
-        fontSize="10px"
-      >
-        {importeFormateado}
-      </text>
-    </g>
-  );
-};
+
+interface ProductoCategoria {
+  categoria: string;
+  productos: {
+    articulo: string;
+    descripcion: string;
+    cantidad: number;
+    total: number;
+  }[];
+  cantidadCategoria: number;
+  totalCategoria: number;
+}
 
 interface TopProductosPorCategoriaProps {
-    topProductosPorCategoria: any[];
-    topProductosPorCategoriaImporte: any[];
+    topProductosPorCategoria: ProductoCategoria[];
+    topProductosPorCategoriaImporte: ProductoCategoria[];
 }
 
 export const TopProductosPorCategoria = ({
@@ -113,10 +68,10 @@ export const TopProductosPorCategoria = ({
     const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
     const [popoverVisible, setPopoverVisible] = useState<boolean>(false);
     
-    const meses = [
+    const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
+    ], []);
     
     // Identificar meses que tienen datos
     useEffect(() => {
@@ -124,13 +79,13 @@ export const TopProductosPorCategoria = ({
         if (filtroMeses === 'individual' && !mesSeleccionado && meses.length > 0) {
             setMesSeleccionado(meses[0]);
         }
-    }, [filtroMeses, mesSeleccionado]);
+    }, [filtroMeses, mesSeleccionado, meses]);
 
     // Inicializar categorías seleccionadas con todas las categorías disponibles
     useEffect(() => {
         const data = mostrarCantidad ? topProductosPorCategoria : topProductosPorCategoriaImporte;
         if (data && Array.isArray(data) && data.length > 0 && categoriasSeleccionadas.length === 0) {
-            const todasLasCategorias = [...new Set(data.map((item: any) => item.categoria))];
+            const todasLasCategorias = [...new Set(data.map((item: ProductoCategoria) => item.categoria))];
             setCategoriasSeleccionadas(todasLasCategorias);
         }
     }, [topProductosPorCategoria, topProductosPorCategoriaImporte, mostrarCantidad, categoriasSeleccionadas.length]);
@@ -145,43 +100,31 @@ export const TopProductosPorCategoria = ({
     console.log('🔍 TopProductosPorCategoria - data.length:', data?.length);
     console.log('🔍 TopProductosPorCategoria - Array.isArray(data):', Array.isArray(data));
 
-    // Validar que data existe y es un array
-    if (!data || !Array.isArray(data)) {
-        console.log('❌ TopProductosPorCategoria_new - data no válido, renderizando mensaje');
-        return (
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Top Productos por Categoría</h4>
-                <div className="text-center py-8">
-                    <p className="text-gray-500 dark:text-gray-400">No hay datos disponibles para mostrar</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                        Data: {data ? 'existe' : 'null'}, Array: {Array.isArray(data) ? 'sí' : 'no'}
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    // Si hay categorías seleccionadas, filtrar solo esas categorías
-    let dataFiltrada = categoriasSeleccionadas.length > 0
-        ? data.filter((item: any) => categoriasSeleccionadas.includes(item.categoria))
-        : data;
-        
-    // Aplicar ordenamiento de categorías según la selección del usuario
-    // Ascendente: menor venta primero, Descendente: mayor venta primero
-    dataFiltrada = [...dataFiltrada].sort((a: any, b: any) => {
-        const valorA = mostrarCantidad ? a.cantidadCategoria : a.totalCategoria;
-        const valorB = mostrarCantidad ? b.cantidadCategoria : b.totalCategoria;
-        return ordenAscendente ? valorA - valorB : valorB - valorA;
-    }); // Sin límite de categorías, controlado por filtro
-
     // Preparar datos para el gráfico - ESTRUCTURA JERÁRQUICA
     const chartData = useMemo(() => {
+        // Validar que data existe y es un array
+        if (!data || !Array.isArray(data)) {
+            return [];
+        }
+
+        // Si hay categorías seleccionadas, filtrar solo esas categorías
+        let dataFiltrada = categoriasSeleccionadas.length > 0
+            ? data.filter((item: ProductoCategoria) => categoriasSeleccionadas.includes(item.categoria))
+            : data;
+            
+        // Aplicar ordenamiento de categorías según la selección del usuario
+        // Ascendente: menor venta primero, Descendente: mayor venta primero
+        dataFiltrada = [...dataFiltrada].sort((a: ProductoCategoria, b: ProductoCategoria) => {
+            const valorA = mostrarCantidad ? a.cantidadCategoria : a.totalCategoria;
+            const valorB = mostrarCantidad ? b.cantidadCategoria : b.totalCategoria;
+            return ordenAscendente ? valorA - valorB : valorB - valorA;
+        }); // Sin límite de categorías, controlado por filtro
         console.log('🔍 prepararDatosGrafico - dataFiltrada:', dataFiltrada);
         console.log('🔍 prepararDatosGrafico - dataFiltrada.length:', dataFiltrada.length);
         
-        const resultado: any[] = [];
+        const resultado: Array<{name: string; value: number; isCategory?: boolean; categoria?: string; porcentaje?: number; articulo?: string; descripcion?: string}> = [];
         
-        dataFiltrada.forEach((categoria: any) => {
+        dataFiltrada.forEach((categoria: ProductoCategoria) => {
             // Añadir el total de la categoría (destacado)
             resultado.push({
                 name: `${categoria.categoria} (Total)`,
@@ -193,7 +136,7 @@ export const TopProductosPorCategoria = ({
             });
 
             // Añadir productos de la categoría (indentados)
-            categoria.productos.slice(0, topPorCategoria).forEach((producto: any) => {
+            categoria.productos.slice(0, topPorCategoria).forEach((producto) => {
                 resultado.push({
                     name: `  ${producto.descripcion}`,
                     value: mostrarCantidad ? producto.cantidad : producto.total,
@@ -209,7 +152,7 @@ export const TopProductosPorCategoria = ({
         console.log('🔍 prepararDatosGrafico - resultado.length:', resultado.length);
         
         return resultado; // Sin límite artificial, controlado por filtro de categorías y topPorCategoria
-    }, [dataFiltrada, mostrarCantidad, topPorCategoria]);
+    }, [data, categoriasSeleccionadas, ordenAscendente, mostrarCantidad, topPorCategoria]);
     
     // Calcular altura dinámica
     const calcularAltura = () => {
@@ -220,7 +163,7 @@ export const TopProductosPorCategoria = ({
 
     interface TooltipProps {
         active?: boolean;
-        payload?: Array<{ payload: { isCategory?: boolean; categoria?: string; descripcion?: string; value: number; porcentaje: number } }>;
+        payload?: Array<{ payload: { isCategory?: boolean; categoria?: string; descripcion?: string; value: number; porcentaje?: number } }>;
         label?: string;
     }
 
@@ -238,6 +181,22 @@ export const TopProductosPorCategoria = ({
         }
         return null;
     };
+
+    // Validar que data existe y es un array para el render
+    if (!data || !Array.isArray(data)) {
+        console.log('❌ TopProductosPorCategoria_new - data no válido, renderizando mensaje');
+        return (
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Top Productos por Categoría</h4>
+                <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">No hay datos disponibles para mostrar</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                        Data: {data ? 'existe' : 'null'}, Array: {Array.isArray(data) ? 'sí' : 'no'}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -335,12 +294,12 @@ export const TopProductosPorCategoria = ({
                                     <div className="space-y-2 max-h-60 overflow-y-auto">
                                         {data
                                             .slice()
-                                            .sort((a: any, b: any) => {
+                                            .sort((a: ProductoCategoria, b: ProductoCategoria) => {
                                                 const valorA = mostrarCantidad ? a.cantidadCategoria : a.totalCategoria;
                                                 const valorB = mostrarCantidad ? b.cantidadCategoria : b.totalCategoria;
                                                 return valorB - valorA;
                                             })
-                                            .map((cat: any) => (
+                                            .map((cat: ProductoCategoria) => (
                                                 <label key={cat.categoria} className="flex items-center space-x-2 text-sm cursor-pointer">
                                                     <input
                                                         type="checkbox"
@@ -378,7 +337,7 @@ export const TopProductosPorCategoria = ({
                                         </button>
                                         <div className="space-x-2">
                                             <button 
-                                                onClick={() => setCategoriasSeleccionadas(data.map((cat: any) => cat.categoria))}
+                                                onClick={() => setCategoriasSeleccionadas(data.map((cat: ProductoCategoria) => cat.categoria))}
                                                 className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
                                             >
                                                 Seleccionar todas
@@ -487,7 +446,7 @@ export const TopProductosPorCategoria = ({
                             barSize={16}
                             filter="url(#shadowProductos)"
                         >
-                            {chartData.map((entry: any, index: number) => (
+                            {chartData.map((entry, index: number) => (
                                 <Cell 
                                     key={`cell-${index}`}
                                     fill={entry.isCategory ? "url(#colorBarCategoriaTotal)" : "url(#colorBarProducto)"}

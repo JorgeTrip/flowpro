@@ -16,7 +16,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
     // Obtener todos los vendedores disponibles
     const todosLosVendedores = useMemo(() => {
         const vendedores = new Set<string>();
-        Object.entries(ventasPorVendedor.resultado).forEach(([vendedor, subvendedores]) => {
+        Object.entries(ventasPorVendedor.resultado).forEach(([_vendedor, subvendedores]) => {
             Object.keys(subvendedores).forEach(subvendedor => {
                 vendedores.add(subvendedor || 'Sin vendedor');
             });
@@ -43,11 +43,11 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
             totalCantidad: number;
         }> = [];
 
-        Object.entries(ventasPorVendedor.resultado).forEach(([vendedor, subvendedores]) => {
-            Object.entries(subvendedores).forEach(([subvendedor, data]) => {
-                const nombreVendedor = subvendedor || 'Sin vendedor';
+        Object.entries(ventasPorVendedor.resultado).forEach(([_vendedor, subvendedores]) => {
+            Object.entries(subvendedores).forEach(([_subvendedor, data]) => {
+                const nombreVendedor = _subvendedor || 'Sin vendedor';
                 if (vendedoresSeleccionados.includes(nombreVendedor)) {
-                    const cantidades = cantidadesPorVendedor.resultado[vendedor]?.[subvendedor] || { A: 0, X: 0 };
+                    const cantidades = cantidadesPorVendedor.resultado[_vendedor]?.[_subvendedor] || { A: 0, X: 0 };
                     datos.push({
                         vendedor: nombreVendedor,
                         importeA: data.A || 0,

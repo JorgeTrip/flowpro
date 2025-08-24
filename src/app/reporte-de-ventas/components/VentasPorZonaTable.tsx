@@ -16,7 +16,7 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
     // Obtener todas las zonas disponibles
     const todasLasZonas = useMemo(() => {
         const zonas = new Set<string>();
-        Object.entries(ventasPorZona).forEach(([zona, subzonas]) => {
+        Object.entries(ventasPorZona).forEach(([_zona, subzonas]) => {
             Object.keys(subzonas).forEach(subzona => {
                 zonas.add(subzona || 'Sin zona');
             });
@@ -43,11 +43,11 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
             totalCantidad: number;
         }> = [];
 
-        Object.entries(ventasPorZona).forEach(([zona, subzonas]) => {
+        Object.entries(ventasPorZona).forEach(([_zona, subzonas]) => {
             Object.entries(subzonas).forEach(([subzona, data]) => {
                 const nombreZona = subzona || 'Sin zona';
                 if (zonasSeleccionadas.includes(nombreZona)) {
-                    const cantidades = cantidadesPorZona[zona]?.[subzona] || { A: 0, X: 0 };
+                    const cantidades = cantidadesPorZona[_zona]?.[subzona] || { A: 0, X: 0 };
                     datos.push({
                         zona: nombreZona,
                         importeA: data.A || 0,

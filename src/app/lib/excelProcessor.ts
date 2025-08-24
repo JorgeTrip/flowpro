@@ -115,8 +115,8 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
                   cellValue,
                   cellType: typeof cellValue,
                   cellText: cell.text,
-                  cellFormula: (cell as any).formula,
-                  cellResult: (cell as any).result,
+                  cellFormula: (cell as FormulaResult).formula,
+                  cellResult: (cell as FormulaResult).result,
                   finalValue: cellValue === undefined ? '' : cellValue
                 });
               }
@@ -130,9 +130,9 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
               } else if (typeof cellValue === 'object' && cellValue !== null && 'error' in cellValue) {
                 cellValue = '';
               } else if (typeof cellValue === 'object' && cellValue !== null && 'richText' in cellValue) {
-                cellValue = (cellValue as any).richText.map((rt: any) => rt.text).join('');
+                cellValue = (cellValue as FormulaResult).richText?.map((rt: RichTextElement) => rt.text).join('') || '';
               } else if (typeof cellValue === 'object' && cellValue !== null && 'hyperlink' in cellValue) {
-                cellValue = (cellValue as any).text;
+                cellValue = (cellValue as FormulaResult).text || '';
               } else if (typeof cellValue === 'object' && cellValue !== null && ('formula' in cellValue || 'sharedFormula' in cellValue)) {
                 cellValue = processFormulaResult((cellValue as FormulaResult).result);
               }
@@ -145,9 +145,9 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
               if (typeof cellValue === 'object' && cellValue !== null) {
                 // Para objetos, intentar extraer el texto
                 if ('richText' in cellValue) {
-                  rowData[mappedHeader] = (cellValue as any).richText.map((rt: any) => rt.text).join('');
+                  rowData[mappedHeader] = (cellValue as FormulaResult).richText?.map((rt: RichTextElement) => rt.text).join('') || '';
                 } else if ('text' in cellValue) {
-                  rowData[mappedHeader] = (cellValue as any).text;
+                  rowData[mappedHeader] = (cellValue as FormulaResult).text || '';
                 } else {
                   rowData[mappedHeader] = String(cellValue);
                 }

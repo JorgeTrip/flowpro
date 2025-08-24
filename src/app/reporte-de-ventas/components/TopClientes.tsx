@@ -1,8 +1,8 @@
-// © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
+// &#169; 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
@@ -62,10 +62,10 @@ export const TopClientes = ({
     const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
     const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
     
-    const meses = [
+    const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
+    ], []);
     
     // Simular meses con datos (en una implementación real esto vendría de los datos)
     useEffect(() => {
@@ -74,7 +74,7 @@ export const TopClientes = ({
         if (filtroMeses === 'individual' && !mesSeleccionado) {
             setMesSeleccionado(meses[0]);
         }
-    }, [filtroMeses, mesSeleccionado]);
+    }, [filtroMeses, mesSeleccionado, meses]);
 
     const data = useMemo(() => {
         let sourceData;

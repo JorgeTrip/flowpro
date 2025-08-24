@@ -1,9 +1,8 @@
-// © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
+// 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { ReporteResultados } from '@/app/lib/reportGenerator';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
@@ -51,10 +50,10 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
     const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
     const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
     
-    const meses = [
+    const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
+    ], []);
     
     // Identificar meses que tienen datos
     useEffect(() => {
@@ -67,7 +66,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
         if (filtroMeses === 'individual' && !mesSeleccionado && mesesDisponibles.length > 0) {
             setMesSeleccionado(mesesDisponibles[0]);
         }
-    }, [ventasPorMes, filtroMeses, mesSeleccionado]);
+    }, [ventasPorMes, filtroMeses, mesSeleccionado, meses]);
 
     const data = useMemo(() => {
         let mesesAMostrar: string[] = [];
@@ -93,7 +92,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                 cantidadAX: cantidadData.AX,
             };
         });
-    }, [ventasPorMes, filtroMeses, mesSeleccionado, mesesConDatos]);
+    }, [ventasPorMes, filtroMeses, mesSeleccionado, mesesConDatos, cantidadesPorMes, meses]);
 
     interface TooltipProps {
         active?: boolean;

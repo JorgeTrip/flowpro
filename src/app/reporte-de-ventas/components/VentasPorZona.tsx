@@ -16,7 +16,7 @@ export const VentasPorZona = ({ ventasPorZona, cantidadesPorZona }: {
   cantidadesPorZona: ReporteResultados['cantidadesPorZona'];
 }) => {
   const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const [_activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const [distanciaEtiquetas, setDistanciaEtiquetas] = useState<number>(1.8);
 
   const data = useMemo(() => {
@@ -38,7 +38,7 @@ export const VentasPorZona = ({ ventasPorZona, cantidadesPorZona }: {
       .filter(item => item.value > 0);
   }, [metric, ventasPorZona, cantidadesPorZona]);
 
-  interface PieLabelRenderProps {
+  interface _PieLabelRenderProps {
   cx: number;
   cy: number;
   midAngle?: number;
@@ -78,7 +78,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     return null;
   };
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 
@@ -86,7 +86,19 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     setActiveIndex(undefined);
   };
 
-  const renderActiveShape = (props: any) => {
+  interface ActiveShapeProps {
+    cx: number;
+    cy: number;
+    innerRadius: number;
+    outerRadius: number;
+    startAngle: number;
+    endAngle: number;
+    fill: string;
+    payload: { name: string; value: number };
+    percent: number;
+  }
+
+  const _renderActiveShape = (props: ActiveShapeProps) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
     
     return (
@@ -192,7 +204,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
             endAngle={-270}
             filter="url(#shadow3DZona)"
             label={(props) => {
-              const { cx, cy, midAngle, innerRadius, outerRadius, name, value, index } = props;
+              const { cx, cy, midAngle, _innerRadius, outerRadius, name, value, index } = props;
               
               // Validaciones de tipos
               if (!cx || !cy || midAngle === undefined || !outerRadius || !name || value === undefined || index === undefined) {

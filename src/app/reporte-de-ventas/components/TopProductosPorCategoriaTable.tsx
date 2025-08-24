@@ -45,7 +45,7 @@ export const TopProductosPorCategoriaTable = ({
         if (categoriasSeleccionadas.length === 0) {
             setCategoriasSeleccionadas(todasLasCategorias);
         }
-    }, [todasLasCategorias, categoriasSeleccionadas.length]);
+    }, [todasLasCategorias, categoriasSeleccionadas.length, setCategoriasSeleccionadas]);
 
     // Filtrar y procesar datos
     const datosProcesados = useMemo(() => {
@@ -114,7 +114,7 @@ export const TopProductosPorCategoriaTable = ({
             ? ['Categoría/Producto', 'Artículo', 'Descripción', mostrarCantidad ? 'Cantidad' : 'Importe', '% Total', '% Categoría']
             : ['Categoría/Producto', 'Artículo', 'Descripción', mostrarCantidad ? 'Cantidad' : 'Importe'];
         
-        const rows: any[] = [];
+        const rows: (string | number)[][] = [];
         
         datosProcesados.forEach(categoria => {
             const totalGeneral = mostrarCantidad ? totalesGenerales.cantidad : totalesGenerales.importe;
@@ -180,7 +180,7 @@ export const TopProductosPorCategoriaTable = ({
                         {/* Filtro de período */}
                         <select
                             value={filtroMeses}
-                            onChange={(e) => setFiltroMeses(e.target.value as any)}
+                            onChange={(e) => setFiltroMeses(e.target.value as 'todos' | 'conDatos' | 'individual')}
                             className="bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-36 p-2"
                         >
                             <option value="todos">Todos</option>

@@ -16,16 +16,16 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
   ventasPorRubro: ReporteResultados['ventasPorRubro'];
   cantidadesPorRubro: ReporteResultados['cantidadesPorRubro'];
 }) => {
-  const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const [activeMetric, setMetric] = useState<'importe' | 'cantidad'>('importe');
+  const [_activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const [distanciaEtiquetas, setDistanciaEtiquetas] = useState<number>(1.8);
 
   const data = useMemo(() => {
-    const sourceData = metric === 'importe' ? ventasPorRubro : cantidadesPorRubro;
+    const sourceData = activeMetric === 'importe' ? ventasPorRubro : cantidadesPorRubro;
     const result: { name: string; value: number }[] = [];
     
     // Aplanar la estructura anidada y sumar valores por rubro
-    Object.entries(sourceData).forEach(([mainRubro, subRubros]) => {
+    Object.entries(sourceData).forEach(([_mainRubro, subRubros]) => {
       Object.entries(subRubros).forEach(([subRubro, values]) => {
         const existingIndex = result.findIndex(item => item.name === subRubro);
         const totalValue = (values.A || 0) + (values.X || 0);
@@ -42,7 +42,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
     });
     
     return result.filter(item => item.value > 0);
-  }, [metric, ventasPorRubro, cantidadesPorRubro]);
+  }, [activeMetric, ventasPorRubro, cantidadesPorRubro]);
 
 
   interface CustomTooltipProps {
@@ -59,8 +59,8 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
         <div className="p-3 bg-white border border-gray-300 rounded-lg shadow-lg max-w-xs">
           <p className="font-bold text-gray-800 mb-2">{payload[0].name}</p>
           <p className="text-gray-600">
-            {metric === 'importe' ? 'Importe: ' : 'Cantidad: '}
-            <strong className="text-gray-800">{metric === 'importe' ? formatCurrency(payload[0].value) : formatQuantity(payload[0].value)}</strong>
+            {activeMetric === 'importe' ? 'Importe: ' : 'Cantidad: '}
+            <strong className="text-gray-800">{activeMetric === 'importe' ? formatCurrency(payload[0].value) : formatQuantity(payload[0].value)}</strong>
           </p>
           <p className="text-gray-600">
             Porcentaje: <strong className="text-gray-800">{percentage}%</strong>
@@ -71,7 +71,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
     return null;
   };
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 
@@ -79,7 +79,19 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
     setActiveIndex(undefined);
   };
 
-  const renderActiveShape = (props: any) => {
+  interface ActiveShapeProps {
+    cx: number;
+    cy: number;
+    innerRadius: number;
+    outerRadius: number;
+    startAngle: number;
+    endAngle: number;
+    fill: string;
+    payload: { name: string; value: number };
+    percent: number;
+  }
+
+  const _renderActiveShape = (props: ActiveShapeProps) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
     
     return (
@@ -88,7 +100,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
           {payload.name}
         </text>
         <text x={cx} y={cy} dy={0} textAnchor="middle" fill="#333" className="text-sm">
-          {metric === 'importe' ? formatCurrency(payload.value) : formatQuantity(payload.value)}
+          {activeMetric === 'importe' ? formatCurrency(payload.value) : formatQuantity(payload.value)}
         </text>
         <text x={cx} y={cy} dy={20} textAnchor="middle" fill="#666" className="text-xs">
           {`${(percent * 100).toFixed(2)}%`}
@@ -106,7 +118,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
     );
   };
 
-  const formatearNumeroCompacto = (num: number, esMoneda: boolean) => {
+  const _formatearNumeroCompacto = (value: number, esImporte: boolean = true) => {
     const formatearConSeparadores = (valor: number, decimales: number = 1): string => {
       return valor.toLocaleString('es-AR', {
         minimumFractionDigits: decimales,
@@ -114,19 +126,19 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
       });
     };
     
-    if (num >= 1000000) {
-      const valorFormateado = formatearConSeparadores(num / 1000000);
-      return esMoneda
+    if (value >= 1000000) {
+      const valorFormateado = formatearConSeparadores(value / 1000000);
+      return esImporte
         ? `$${valorFormateado} mill.`
         : `${valorFormateado} mill.`;
-    } else if (num >= 1000) {
-      const valorFormateado = formatearConSeparadores(num, 0);
-      return esMoneda
+    } else if (value >= 1000) {
+      const valorFormateado = formatearConSeparadores(value, 0);
+      return esImporte
         ? `$${valorFormateado}`
         : `${valorFormateado}`;
     } else {
-      const valorFormateado = formatearConSeparadores(num, 0);
-      return esMoneda
+      const valorFormateado = formatearConSeparadores(value, 0);
+      return esImporte
         ? `$${valorFormateado}`
         : `${valorFormateado}`;
     }
@@ -138,7 +150,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
         <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas por Rubro</h4>
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <select
-            value={metric}
+            value={activeMetric}
             onChange={(e) => setMetric(e.target.value as 'importe' | 'cantidad')}
             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
@@ -185,10 +197,10 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
             endAngle={-270}
             filter="url(#shadow3D)"
             label={(props) => {
-              const { cx, cy, midAngle, innerRadius, outerRadius, name, value, index } = props;
+              const { cx, cy, midAngle, _innerRadius, outerRadius, percent, index, value } = props;
               
               // Validaciones de tipos
-              if (!cx || !cy || midAngle === undefined || !outerRadius || !name || value === undefined || index === undefined) {
+              if (!cx || !cy || midAngle === undefined || !outerRadius || !percent || index === undefined || !value) {
                 return null;
               }
               
@@ -205,44 +217,24 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
               const textAnchor = x > cx ? 'start' : 'end';
               
               // Formatear valores
-              const valorFormateado = formatearNumeroCompacto(value, metric === 'importe');
+              const valorFormateado = activeMetric === 'importe' ? formatCurrency(value) : formatQuantity(value);
               
               return (
-                <g>
-                  {/* Línea conectora */}
-                  <line
-                    x1={cx + (outerRadius + 5) * Math.cos(-midAngle * RADIAN)}
-                    y1={cy + (outerRadius + 5) * Math.sin(-midAngle * RADIAN)}
-                    x2={x - (textAnchor === 'start' ? 5 : -5)}
-                    y2={y}
-                    stroke={COLORS[index % COLORS.length]}
-                    strokeWidth={1}
-                  />
-                  
-                  {/* Nombre y porcentaje en negrita */}
-                  <text 
-                    x={x} 
-                    y={y - 10} 
-                    fill={COLORS[index % COLORS.length]} 
-                    textAnchor={textAnchor} 
-                    dominantBaseline="central"
-                    className="font-bold text-sm"
-                  >
-                    {name}: {percentage}%
-                  </text>
-                  
-                  {/* Valor formateado */}
-                  <text 
-                    x={x} 
-                    y={y + 10} 
-                    fill="#666" 
-                    textAnchor={textAnchor} 
-                    dominantBaseline="central"
-                    className="text-xs"
-                  >
-                    {metric === 'importe' ? '$: ' : 'Cant: '}{valorFormateado}
-                  </text>
-                </g>
+                <text 
+                  x={x} 
+                  y={y} 
+                  fill="#333" 
+                  textAnchor={textAnchor} 
+                  dominantBaseline="central"
+                  className="text-xs font-medium"
+                >
+                  <tspan x={x} dy="0" className="font-bold">
+                    {data[index]?.name} ({percentage}%)
+                  </tspan>
+                  <tspan x={x} dy="12" className="text-xs">
+                    {valorFormateado}
+                  </tspan>
+                </text>
               );
             }}
             labelLine={{
