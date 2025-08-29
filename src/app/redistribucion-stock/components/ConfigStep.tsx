@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRedistribucionStockStore, ExcelRow } from '@/app/stores/redistribucionStockStore';
+import { useRedistribucionStockStore } from '@/app/stores/redistribucionStockStore';
 import { redistribuirStock } from '@/app/lib/stockRedistributor';
 import DataPreviewTable from '../../estimar-demanda/components/DataPreviewTable';
 

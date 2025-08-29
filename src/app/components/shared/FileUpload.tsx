@@ -14,13 +14,14 @@ export interface ProcessedExcelData<T> {
 
 interface FileUploadProps<T> {
   title: string;
+  description?: string;
   file: File | null;
   onFileLoad: (file: File, data: ProcessedExcelData<T>) => void;
   setIsLoading?: (loading: boolean) => void;
   setError?: (error: string | null) => void;
 }
 
-export function FileUpload<T>({ title, file, onFileLoad, setIsLoading, setError }: FileUploadProps<T>) {
+export function FileUpload<T>({ title, description, file, onFileLoad, setIsLoading, setError }: FileUploadProps<T>) {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const uploadedFile = acceptedFiles[0];
     if (uploadedFile) {
@@ -57,7 +58,10 @@ export function FileUpload<T>({ title, file, onFileLoad, setIsLoading, setError 
 
   return (
     <div className="w-full">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">{title}</h3>
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{title}</h3>
+        {description && <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{description}</p>}
+      </div>
       <div
         {...getRootProps()}
         className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${

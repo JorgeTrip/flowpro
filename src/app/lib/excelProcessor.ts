@@ -105,7 +105,6 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
             const header = columns[colNumber - 1];
             if (header) {
               const cell = row.getCell(colNumber);
-              const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
               // Para redistribución de stock, usar siempre el nombre original de la columna
               const mappedHeader = header;
 
