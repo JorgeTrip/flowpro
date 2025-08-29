@@ -75,17 +75,27 @@ export function ConfigStep() {
 
   useEffect(() => {
     const findDefaultColumn = (columns: string[], keywords: string[]): string => {
-      // First pass: exact matches (normalized)
       for (const keyword of keywords) {
         const normalizedKeyword = normalizeText(keyword);
         const exactMatch = columns.find(col => normalizeText(col) === normalizedKeyword);
         if (exactMatch) return exactMatch;
       }
-      // Second pass: partial matches (normalized)
       for (const keyword of keywords) {
         const normalizedKeyword = normalizeText(keyword);
         const partialMatch = columns.find(col => normalizeText(col).includes(normalizedKeyword));
         if (partialMatch) return partialMatch;
+      }
+      return '';
+    };
+
+    const findDefaultStockColumn = (columns: string[], locationKeywords: string[], typeKeywords: string[]): string => {
+      for (const col of columns) {
+        const normalizedCol = normalizeText(col);
+        const hasLocation = locationKeywords.some(loc => normalizedCol.includes(normalizeText(loc)));
+        const hasType = typeKeywords.some(type => normalizedCol.includes(normalizeText(type)));
+        if (hasLocation && hasType) {
+          return col;
+        }
       }
       return '';
     };
@@ -95,59 +105,13 @@ export function ConfigStep() {
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .replace(/\n/g, ' ') // Replace newlines with spaces
+        .replace(/\s+/g, ' ') // Collapse multiple spaces
         .trim();
     };
 
-    const findValidDescriptionColumn = (data: ExcelRow[], columns: string[], keywords: string[]): string => {
-      const candidateColumns: string[] = [];
-      
-      // First pass: exact matches (normalized)
-      for (const keyword of keywords) {
-        const normalizedKeyword = normalizeText(keyword);
-        const exactMatch = columns.find(col => normalizeText(col) === normalizedKeyword);
-        if (exactMatch && !candidateColumns.includes(exactMatch)) {
-          candidateColumns.push(exactMatch);
-        }
-      }
-      
-      // Second pass: partial matches (normalized)
-      for (const keyword of keywords) {
-        const normalizedKeyword = normalizeText(keyword);
-        const partialMatch = columns.find(col => 
-          normalizeText(col).includes(normalizedKeyword) && 
-          !candidateColumns.includes(col)
-        );
-        if (partialMatch) {
-          candidateColumns.push(partialMatch);
-        }
-      }
-      
-      // Validate candidates have real data
-      for (const column of candidateColumns) {
-        let hasValidData = false;
-        
-        for (let i = 0; i < Math.min(5, data.length); i++) {
-          const value = data[i][column];
-          console.log(`Validando columna '${column}', fila ${i}:`, { value, type: typeof value, string: String(value) });
-          if (value && String(value).trim() !== '' && String(value).toLowerCase() !== 'null') {
-            hasValidData = true;
-            break;
-          }
-        }
-        
-        if (hasValidData) {
-          console.log(`Columna de descripción válida encontrada: '${column}' con datos reales`);
-          return column;
-        } else {
-          console.log(`Columna '${column}' descartada: sin datos válidos en las primeras filas`);
-        }
-      }
-      
-      return '';
-    };
 
     if (stockColumnas.length > 0) {
-      console.log('Columnas disponibles:', stockColumnas);
       // Buscar descripción directamente sin validación estricta de datos
       let descripcionColumn = '';
       for (const keyword of ['descripcion', 'descripción', 'desc', 'desc.', 'detalle', 'producto', 'articulo', 'artículo']) {
@@ -171,16 +135,15 @@ export function ConfigStep() {
         }
       }
       
-      console.log('Descripción encontrada:', descripcionColumn);
       
       setMapeo(prev => ({
         ...prev,
         productoId: prev.productoId || findDefaultColumn(stockColumnas, ['cod', 'cód', 'cod.', 'cód.', 'codigo', 'código', 'sku']),
         descripcion: prev.descripcion || descripcionColumn,
-        stockCABAMateriaPrima: prev.stockCABAMateriaPrima || findDefaultColumn(stockColumnas, ['caba mp', 'caba materia prima', 'buenos aires mp', 'ba mp']),
-        stockCABAProductoTerminado: prev.stockCABAProductoTerminado || findDefaultColumn(stockColumnas, ['caba pt', 'caba producto terminado', 'buenos aires pt', 'ba pt']),
-        stockEntreRiosMateriaPrima: prev.stockEntreRiosMateriaPrima || findDefaultColumn(stockColumnas, ['entre rios mp', 'er mp', 'entrerios mp']),
-        stockEntreRiosProductoTerminado: prev.stockEntreRiosProductoTerminado || findDefaultColumn(stockColumnas, ['entre rios pt', 'er pt', 'entrerios pt']),
+        stockCABAMateriaPrima: prev.stockCABAMateriaPrima || findDefaultStockColumn(stockColumnas, ['caba', 'buenos aires'], ['mp', 'materia prima']),
+        stockCABAProductoTerminado: prev.stockCABAProductoTerminado || findDefaultStockColumn(stockColumnas, ['caba', 'buenos aires'], ['pt', 'producto terminado']),
+        stockEntreRiosMateriaPrima: prev.stockEntreRiosMateriaPrima || findDefaultStockColumn(stockColumnas, ['entre rios', 'er'], ['mp', 'materia prima']),
+        stockEntreRiosProductoTerminado: prev.stockEntreRiosProductoTerminado || findDefaultStockColumn(stockColumnas, ['entre rios', 'er'], ['pt', 'producto terminado']),
         rotacionMensual: prev.rotacionMensual || findDefaultColumn(stockColumnas, ['rotacion', 'rotación', 'consumo', 'demanda mensual', 'venta mensual']),
       }));
     }
@@ -233,7 +196,7 @@ export function ConfigStep() {
             <div>
               <div className="mt-4 grid grid-cols-1 gap-6">
                 <SelectAsignacion
-                  label="ID de Producto (SKU) *"
+                  label="ID de Producto (SKU)"
                   columnas={stockColumnas}
                   value={mapeo.productoId}
                   onChange={(e) => handleMapeoChange('productoId', e.target.value)}
@@ -246,13 +209,13 @@ export function ConfigStep() {
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <SelectAsignacion
-                    label="Stock CABA - Materia Prima *"
+                    label="Stock CABA - Materia Prima"
                     columnas={stockColumnas}
                     value={mapeo.stockCABAMateriaPrima}
                     onChange={(e) => handleMapeoChange('stockCABAMateriaPrima', e.target.value)}
                   />
                   <SelectAsignacion
-                    label="Stock CABA - Producto Terminado *"
+                    label="Stock CABA - Producto Terminado"
                     columnas={stockColumnas}
                     value={mapeo.stockCABAProductoTerminado}
                     onChange={(e) => handleMapeoChange('stockCABAProductoTerminado', e.target.value)}
@@ -260,20 +223,20 @@ export function ConfigStep() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <SelectAsignacion
-                    label="Stock Entre Ríos - Materia Prima *"
+                    label="Stock Entre Ríos - Materia Prima"
                     columnas={stockColumnas}
                     value={mapeo.stockEntreRiosMateriaPrima}
                     onChange={(e) => handleMapeoChange('stockEntreRiosMateriaPrima', e.target.value)}
                   />
                   <SelectAsignacion
-                    label="Stock Entre Ríos - Producto Terminado *"
+                    label="Stock Entre Ríos - Producto Terminado"
                     columnas={stockColumnas}
                     value={mapeo.stockEntreRiosProductoTerminado}
                     onChange={(e) => handleMapeoChange('stockEntreRiosProductoTerminado', e.target.value)}
                   />
                 </div>
                 <SelectAsignacion
-                  label="Rotación Mensual *"
+                  label="Rotación Mensual"
                   columnas={stockColumnas}
                   value={mapeo.rotacionMensual}
                   onChange={(e) => handleMapeoChange('rotacionMensual', e.target.value)}

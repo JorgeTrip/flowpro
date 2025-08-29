@@ -32,17 +32,10 @@ export function redistribuirStock(
     const productoId = fila[mapeo.productoId];
     if (!productoId) continue;
 
-    // Debug: mostrar toda la fila para entender la estructura
-    if (String(productoId).includes('00INSCL001')) {
-      console.log('Fila completa para debug:', fila);
-      console.log('Mapeo descripcion:', mapeo.descripcion);
-      console.log('Todas las claves de la fila:', Object.keys(fila));
-    }
     
     const descripcion = mapeo.descripcion && mapeo.descripcion.trim() && fila[mapeo.descripcion] 
       ? String(fila[mapeo.descripcion]) 
       : String(productoId);
-    console.log(`Producto ${productoId}: descripcion mapeada = "${mapeo.descripcion}", valor = "${mapeo.descripcion ? fila[mapeo.descripcion] : 'N/A'}", resultado = "${descripcion}"`);
     
     // Obtener valores de stock CABA
     const stockCABAMP = Number(fila[mapeo.stockCABAMateriaPrima] || 0);
