@@ -39,6 +39,15 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     categoria: 'ventas'
   },
   {
+    id: 'redistribucion-stock',
+    nombre: 'Redistribución Stock',
+    ruta: '/redistribucion-stock',
+    icono: '🚚',
+    descripcion: 'Redistribución entre depósitos según rotación',
+    activo: true,
+    categoria: 'inventario'
+  },
+  {
     id: 'gestion-ventas',
     nombre: 'Gestión Ventas (CRM)',
     ruta: '/gestion-ventas',

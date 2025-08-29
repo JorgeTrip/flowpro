@@ -68,12 +68,13 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
         const rawHeaders = (headerRow.values as string[])?.slice(1) || [];
         columns = rawHeaders.map(h => h?.trim() || '');
 
-        // Mapeo de cabeceras flexibles
+        // Mapeo de cabeceras flexibles - mantener nombres originales para redistribución
         const headerMapping: { [key: string]: string } = {};
         const expectedHeaders: { [key: string]: string[] } = {
           Fecha: ['fecha'],
           Cliente: ['cliente'],
           Articulo: ['articulo', 'artículo'],
+          // Para redistribución, mantener el nombre original de la columna descripción
           Descripcion: ['descripcion', 'descripción'],
           Cantidad: ['cantidad'],
           PrecioTotal: ['preciototal', 'precio total'],
@@ -105,7 +106,8 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
             if (header) {
               const cell = row.getCell(colNumber);
               const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
-              const mappedHeader = headerMapping[normalizedHeader] || header;
+              // Para redistribución de stock, usar siempre el nombre original de la columna
+              const mappedHeader = header;
 
               let cellValue = cell.value;
               
