@@ -1,8 +1,10 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { CameraIcon } from '@heroicons/react/24/outline';
+import { exportChartAsPNG } from '../lib/exportUtils';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
@@ -67,6 +69,7 @@ export const TopProductosPorCategoria = ({
     const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([]);
     const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
     const [popoverVisible, setPopoverVisible] = useState<boolean>(false);
+    const chartRef = useRef<HTMLDivElement>(null);
     
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -136,7 +139,8 @@ export const TopProductosPorCategoria = ({
             });
 
             // Añadir productos de la categoría (indentados)
-            categoria.productos.slice(0, topPorCategoria).forEach((producto) => {
+            const productosAMostrar = topPorCategoria === -1 ? categoria.productos : categoria.productos.slice(0, topPorCategoria);
+            productosAMostrar.forEach((producto) => {
                 resultado.push({
                     name: `  ${producto.descripcion}`,
                     value: mostrarCantidad ? producto.cantidad : producto.total,
@@ -198,11 +202,22 @@ export const TopProductosPorCategoria = ({
         );
     }
 
+    const handleExport = () => {
+        exportChartAsPNG(chartRef, 'top-productos-por-categoria');
+    };
+
     return (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
                 <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top Productos por Categoría</h4>
-                <div className="flex items-center space-x-4 flex-wrap">
+                <div className="flex items-center space-x-4 flex-wrap chart-controls">
+                    <button
+                        onClick={handleExport}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                        title="Exportar como PNG"
+                    >
+                        <CameraIcon className="w-4 h-4" />
+                    </button>
                     <select
                         value={filtroMeses}
                         onChange={(e) => {
@@ -235,10 +250,11 @@ export const TopProductosPorCategoria = ({
                     <div className="border-l border-gray-300 dark:border-gray-600 h-8 mx-2"></div>
                     
                     <select
-                        value={topPorCategoria}
+                        value={topPorCategoria === -1 ? -1 : topPorCategoria}
                         onChange={(e) => setTopPorCategoria(Number(e.target.value))}
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-44 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     >
+                        <option value={-1}>Todos/Categoría</option>
                         <option value={1}>1 Prod/Categoría</option>
                         <option value={2}>2 Prod/Categoría</option>
                         <option value={3}>3 Prod/Categoría</option>
@@ -330,11 +346,16 @@ export const TopProductosPorCategoria = ({
                                     </div>
                                     <div className="flex justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                                         <button 
-                                            onClick={() => setCategoriasSeleccionadas([])}
-                                            className="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
-                                        >
-                                            Limpiar
-                                        </button>
+                            onClick={() => setCategoriasSeleccionadas([])}
+                            disabled={categoriasSeleccionadas.length === 0}
+                            className={`text-sm px-3 py-1 rounded transition-colors ${
+                                categoriasSeleccionadas.length === 0
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500'
+                            }`}
+                        >
+                            Limpiar
+                        </button>
                                         <div className="space-x-2">
                                             <button 
                                                 onClick={() => setCategoriasSeleccionadas(data.map((cat: ProductoCategoria) => cat.categoria))}
@@ -460,7 +481,10 @@ export const TopProductosPorCategoria = ({
             
             <div className="text-center mt-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {`Top ${topPorCategoria} productos más vendidos por categoría (por ${mostrarCantidad ? 'cantidad' : 'importe'})`}
+                    {topPorCategoria === -1 
+                        ? `Todos los productos por categoría (por ${mostrarCantidad ? 'cantidad' : 'importe'})`
+                        : `Top ${topPorCategoria} productos más vendidos por categoría (por ${mostrarCantidad ? 'cantidad' : 'importe'})`
+                    }
                 </span>
             </div>
             

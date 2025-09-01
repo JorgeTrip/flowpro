@@ -1,8 +1,10 @@
 // &#169; 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { CameraIcon } from '@heroicons/react/24/outline';
+import { exportChartAsPNG } from '../lib/exportUtils';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
 
 // --- Helper Functions ---
@@ -61,6 +63,7 @@ export const TopClientes = ({
     const [filtroMeses, setFiltroMeses] = useState<'todos' | 'conDatos' | 'individual'>('todos');
     const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
     const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
+    const chartRef = useRef<HTMLDivElement>(null);
     
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -124,11 +127,22 @@ export const TopClientes = ({
         return null;
     };
 
+    const handleExport = () => {
+        exportChartAsPNG(chartRef, 'top-clientes');
+    };
+
     return (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
                 <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top Clientes</h4>
-                <div className="flex items-center space-x-4 flex-wrap">
+                <div className="flex items-center space-x-4 flex-wrap chart-controls">
+                    <button
+                        onClick={handleExport}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                        title="Exportar como PNG"
+                    >
+                        <CameraIcon className="w-4 h-4" />
+                    </button>
                     <select
                         value={tipoCliente}
                         onChange={(e) => setTipoCliente(e.target.value as 'Minoristas' | 'Distribuidores')}

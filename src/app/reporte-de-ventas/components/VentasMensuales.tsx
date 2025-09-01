@@ -1,8 +1,10 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { CameraIcon } from '@heroicons/react/24/outline';
+import { exportChartAsPNG } from '../lib/exportUtils';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
@@ -49,6 +51,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
     const [filtroMeses, setFiltroMeses] = useState<'todos' | 'conDatos' | 'individual'>('conDatos');
     const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
     const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
+    const chartRef = useRef<HTMLDivElement>(null);
     
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -121,11 +124,22 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
         return null;
     };
 
+    const handleExport = () => {
+        exportChartAsPNG(chartRef, 'ventas-mensuales');
+    };
+
     return (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
                 <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas Mensuales</h4>
-                <div className="flex items-center space-x-4 flex-wrap">
+                <div className="flex items-center space-x-4 flex-wrap chart-controls">
+                    <button
+                        onClick={handleExport}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                        title="Exportar como PNG"
+                    >
+                        <CameraIcon className="w-4 h-4" />
+                    </button>
                     <select
                         value={filtroMeses}
                         onChange={(e) => {

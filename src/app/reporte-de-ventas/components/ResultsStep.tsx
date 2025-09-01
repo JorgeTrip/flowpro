@@ -11,6 +11,7 @@ import { TopClientes } from './TopClientes';
 import { TopProductos } from './TopProductos';
 import { TopProductosPorCategoria } from './TopProductosPorCategoria';
 import { VentasMensuales } from './VentasMensuales';
+import { VentasPromedio } from './VentasPromedio';
 import { VentasMensualesTable } from './VentasMensualesTable';
 import { TopProductosPorCategoriaTable } from './TopProductosPorCategoriaTable';
 import { VentasPorRubroTable } from './VentasPorRubroTable';
@@ -116,6 +117,7 @@ export function ResultsStep() {
             {activeTab === 'graficos' ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <VentasMensuales ventasPorMes={resultados.ventasPorMes} cantidadesPorMes={resultados.cantidadesPorMes} />
+                <VentasPromedio ventasPorMes={resultados.ventasPorMes} cantidadesPorMes={resultados.cantidadesPorMes} />
                 <VentasPorVendedor ventasPorVendedor={resultados.ventasPorVendedor} cantidadesPorVendedor={resultados.cantidadesPorVendedor} />
                 <VentasPorRubro ventasPorRubro={resultados.ventasPorRubro} cantidadesPorRubro={resultados.cantidadesPorRubro} />
                 <VentasPorZona ventasPorZona={resultados.ventasPorZona} cantidadesPorZona={resultados.cantidadesPorZona} />
