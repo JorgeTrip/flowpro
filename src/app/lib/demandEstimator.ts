@@ -257,12 +257,12 @@ export function estimarDemanda(
         // Hay stock suficiente en Entre Ríos
         criticidad = 'media';
         const cantidadAPedir = Math.min(demandaInsatisfecha, stockEntreRios);
-        pedirAEntreRios = `${Math.ceil(cantidadAPedir)} unidades`;
+        pedirAEntreRios = `${Math.ceil(cantidadAPedir)}`;
         sugerencia = `Pedir ${Math.ceil(cantidadAPedir)} unidades de Entre Ríos para completar 4 meses de cobertura.`;
       } else if (stockEntreRios > 0) {
         // Hay algo de stock en Entre Ríos pero no suficiente
         criticidad = 'alta';
-        pedirAEntreRios = `${stockEntreRios} unidades (insuficiente)`;
+        pedirAEntreRios = `${stockEntreRios}`;
         const faltante = demandaInsatisfecha - stockEntreRios;
         sugerencia = `Pedir ${stockEntreRios} unidades de Entre Ríos y comprar ${Math.ceil(faltante)} unidades adicionales.`;
       } else {
