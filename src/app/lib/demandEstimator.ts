@@ -13,6 +13,7 @@ export interface Mapeo {
   stock: {
     productoId: string;
     cantidad: string;
+    deposito: string;
     stockReservado?: string;
     descripcion?: string;
   };
@@ -24,11 +25,13 @@ export interface ResultadoItem {
   productoId: string | number;
   descripcion: string;
   venta: number;
-  stock: number;
-  stockReservado: number;
-  stockNeto: number;
+  stockCABA: number;
+  stockReservadoCABA: number;
+  stockNetoCABA: number;
+  stockEntreRios: number;
   mesesCobertura: number;
   demandaInsatisfecha: number;
+  pedirAEntreRios: string;
   sugerencia: string;
   criticidad: Criticidad;
 }
@@ -155,14 +158,22 @@ export function estimarDemanda(
   console.log('Mapeo de columnas para stock:', {
     productoId: mapeo.stock.productoId,
     cantidad: mapeo.stock.cantidad,
+    deposito: mapeo.stock.deposito,
     stockReservado: mapeo.stock.stockReservado || 'No mapeado',
     descripcion: mapeo.stock.descripcion || 'No mapeada'
   });
 
-  const stockPorProducto: { [key: string]: { cantidad: number, stockReservado: number, descripcion?: string } } = {};
+  const stockPorProducto: { [key: string]: { 
+    stockCABA: number, 
+    stockReservadoCABA: number, 
+    stockEntreRios: number, 
+    descripcion?: string 
+  } } = {};
+  
   stockData.forEach((row, index) => {
     const productoId = String(row[mapeo.stock.productoId]);
     const cantidad = Number(row[mapeo.stock.cantidad]);
+    const deposito = String(row[mapeo.stock.deposito]).toLowerCase().trim();
     const stockReservado = Number(mapeo.stock.stockReservado ? (row[mapeo.stock.stockReservado] || 0) : 0);
     
     // Get description if mapping exists and value is not empty
@@ -176,24 +187,36 @@ export function estimarDemanda(
         console.log(`Fila de stock ${index}:`);
         console.log(`- ID Producto: '${productoId}'`);
         console.log(`- Cantidad: '${cantidad}'`);
+        console.log(`- Depósito: '${deposito}'`);
         console.log(`- Stock reservado: '${stockReservado}'`);
         console.log(`- Descripción mapeada: '${mapeo.stock.descripcion || 'No mapeada'}'`);
-        console.log(`- Valor RAW de descripción: '${mapeo.stock.descripcion ? row[mapeo.stock.descripcion] : 'NO_COLUMN'}'`);
-        console.log(`- Tipo de valor RAW: '${mapeo.stock.descripcion ? typeof row[mapeo.stock.descripcion] : 'N/A'}'`);
         console.log(`- Valor procesado de descripción: '${descripcion || 'VACÍA/NULA'}'`);
-        console.log(`- Todas las columnas de esta fila:`, Object.keys(row));
     }
     
     if (productoId && !isNaN(cantidad)) {
       if (!stockPorProducto[productoId]) {
         stockPorProducto[productoId] = {
-          cantidad: 0,
-          stockReservado: 0,
+          stockCABA: 0,
+          stockReservadoCABA: 0,
+          stockEntreRios: 0,
           descripcion: descripcion
         };
       }
-      stockPorProducto[productoId].cantidad += cantidad;
-      stockPorProducto[productoId].stockReservado += stockReservado;
+      
+      // Determinar si es CABA o Entre Ríos basado en el valor del depósito
+      const esCABA = deposito.includes('caba') || deposito.includes('capital') || deposito.includes('buenos aires');
+      const esEntreRios = deposito.includes('entre') && (deposito.includes('rios') || deposito.includes('ríos'));
+      
+      if (esCABA) {
+        stockPorProducto[productoId].stockCABA += cantidad;
+        stockPorProducto[productoId].stockReservadoCABA += stockReservado;
+      } else if (esEntreRios) {
+        stockPorProducto[productoId].stockEntreRios += cantidad;
+      } else {
+        // Cualquier otro depósito es ignorado y no forma parte del cálculo
+        console.warn(`Depósito '${deposito}' para producto ${productoId} no es CABA ni Entre Ríos. Ignorando registro.`);
+        return; // Salir del forEach para este registro
+      }
       
       // Solo actualizar la descripción si no está vacía y no hay una descripción previa
       if (!stockPorProducto[productoId].descripcion && descripcion) {
@@ -205,22 +228,50 @@ export function estimarDemanda(
   const resultados: ResultadoItem[] = Object.keys(ventasPorProducto).map(productoId => {
     const ventaInfo = ventasPorProducto[productoId];
     const stockInfo = stockPorProducto[productoId];
-    const stockDisponible = stockInfo ? stockInfo.cantidad : 0;
-    const stockReservado = stockInfo ? stockInfo.stockReservado : 0;
-    const stockNeto = Math.max(0, stockDisponible - stockReservado);
+    
+    const stockCABA = stockInfo ? stockInfo.stockCABA : 0;
+    const stockReservadoCABA = stockInfo ? stockInfo.stockReservadoCABA : 0;
+    const stockNetoCABA = Math.max(0, stockCABA - stockReservadoCABA);
+    const stockEntreRios = stockInfo ? stockInfo.stockEntreRios : 0;
+    
     // Las ventas son negativas, las devoluciones positivas. La venta neta es el valor absoluto de la suma.
     const ventaMensual = Math.abs(ventaInfo.cantidad);
-    const mesesCobertura = ventaMensual > 0 ? stockNeto / ventaMensual : 999;
+    const mesesCoberturaCABA = ventaMensual > 0 ? stockNetoCABA / ventaMensual : 999;
 
+    // Calcular criticidad y lógica de pedido a Entre Ríos
     let criticidad: 'alta' | 'media' | 'baja';
-    if (mesesCobertura < 4) criticidad = 'alta';
-    else if (mesesCobertura === 4) criticidad = 'media';
-    else criticidad = 'baja';
-
-    const demandaInsatisfecha = Math.max(0, (ventaMensual * 4) - stockNeto);
-    const sugerencia = demandaInsatisfecha > 0
-      ? `Comprar ${Math.ceil(demandaInsatisfecha)} unidades para 4 meses de cobertura.`
-      : 'Stock adecuado.';
+    let pedirAEntreRios: string;
+    let sugerencia: string;
+    
+    if (mesesCoberturaCABA >= 4) {
+      // Stock de CABA suficiente
+      criticidad = 'baja';
+      pedirAEntreRios = 'No necesario';
+      sugerencia = 'Stock CABA adecuado.';
+    } else {
+      // Stock de CABA insuficiente, verificar Entre Ríos
+      const demandaInsatisfecha = Math.max(0, (ventaMensual * 4) - stockNetoCABA);
+      const stockEntreRiosParaTresMeses = ventaMensual * 3;
+      
+      if (stockEntreRios >= stockEntreRiosParaTresMeses) {
+        // Hay stock suficiente en Entre Ríos
+        criticidad = 'media';
+        const cantidadAPedir = Math.min(demandaInsatisfecha, stockEntreRios);
+        pedirAEntreRios = `${Math.ceil(cantidadAPedir)} unidades`;
+        sugerencia = `Pedir ${Math.ceil(cantidadAPedir)} unidades de Entre Ríos para completar 4 meses de cobertura.`;
+      } else if (stockEntreRios > 0) {
+        // Hay algo de stock en Entre Ríos pero no suficiente
+        criticidad = 'alta';
+        pedirAEntreRios = `${stockEntreRios} unidades (insuficiente)`;
+        const faltante = demandaInsatisfecha - stockEntreRios;
+        sugerencia = `Pedir ${stockEntreRios} unidades de Entre Ríos y comprar ${Math.ceil(faltante)} unidades adicionales.`;
+      } else {
+        // No hay stock en Entre Ríos
+        criticidad = 'alta';
+        pedirAEntreRios = 'Sin stock disponible en ambos';
+        sugerencia = `Comprar ${Math.ceil(demandaInsatisfecha)} unidades para 4 meses de cobertura.`;
+      }
+    }
 
     // Determinar la mejor descripción disponible
     const descripcionFinal = ventaInfo.descripcion || stockInfo?.descripcion || 'Sin descripción';
@@ -234,16 +285,30 @@ export function estimarDemanda(
       productoId: productoId,
       descripcion: descripcionFinal,
       venta: ventaMensual,
-      stock: stockDisponible,
-      stockReservado: stockReservado,
-      stockNeto: stockNeto,
-      mesesCobertura: Math.round(mesesCobertura),
-      demandaInsatisfecha: Math.ceil(demandaInsatisfecha),
+      stockCABA: stockCABA,
+      stockReservadoCABA: stockReservadoCABA,
+      stockNetoCABA: stockNetoCABA,
+      stockEntreRios: stockEntreRios,
+      mesesCobertura: Math.round(mesesCoberturaCABA),
+      demandaInsatisfecha: Math.max(0, (ventaMensual * 4) - stockNetoCABA),
+      pedirAEntreRios: pedirAEntreRios,
       sugerencia: sugerencia,
       criticidad: criticidad,
     };
   });
 
   console.log(`Análisis finalizado. Se generaron ${resultados.length} resultados.`);
-  return resultados.sort((a, b) => a.mesesCobertura - b.mesesCobertura);
+  
+  // Ordenar por criticidad (alta primero) y luego por meses de cobertura
+  return resultados.sort((a, b) => {
+    const criticalityOrder = { 'alta': 0, 'media': 1, 'baja': 2 };
+    const aCriticality = criticalityOrder[a.criticidad];
+    const bCriticality = criticalityOrder[b.criticidad];
+    
+    if (aCriticality !== bCriticality) {
+      return aCriticality - bCriticality;
+    }
+    
+    return a.mesesCobertura - b.mesesCobertura;
+  });
 }

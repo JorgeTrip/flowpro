@@ -58,14 +58,14 @@ export function ConfigStep() {
 
   const [mapeo, setMapeo] = useState({
     ventas: { productoId: '', cantidad: '', fecha: '', descripcion: '' },
-    stock: { productoId: '', cantidad: '', stockReservado: '', descripcion: '' },
+    stock: { productoId: '', cantidad: '', deposito: '', stockReservado: '', descripcion: '' },
   });
 
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const ventasReady = mapeo.ventas.productoId && mapeo.ventas.cantidad && mapeo.ventas.fecha;
-    const stockReady = mapeo.stock.productoId && mapeo.stock.cantidad;
+    const stockReady = mapeo.stock.productoId && mapeo.stock.cantidad && mapeo.stock.deposito;
     const descripcionReady = mapeo.ventas.descripcion || mapeo.stock.descripcion;
     setIsReady(!!(ventasReady && stockReady && descripcionReady));
   }, [mapeo]);
@@ -157,6 +157,7 @@ export function ConfigStep() {
         stock: {
           productoId: prev.stock.productoId || findDefaultColumn(stockColumnas, ['cod', 'cód', 'cod.', 'cód.']),
           cantidad: prev.stock.cantidad || findDefaultColumn(stockColumnas, ['saldo control stock', 'stock', 'saldo']),
+          deposito: prev.stock.deposito || findDefaultColumn(stockColumnas, ['deposito', 'depósito', 'almacen', 'almacén', 'sucursal']),
           stockReservado: prev.stock.stockReservado || findDefaultColumn(stockColumnas, ['comprometida', 'reservado']),
           descripcion: prev.stock.descripcion || (usarDescripcionStock ? descripcionStock : ''),
         },
@@ -303,6 +304,12 @@ export function ConfigStep() {
                   columnas={stockColumnas}
                   value={mapeo.stock.cantidad}
                   onChange={(e) => handleMapeoChange('stock', 'cantidad', e.target.value)}
+                />
+                <SelectAsignacion
+                  label="Depósito (CABA/Entre Ríos)"
+                  columnas={stockColumnas}
+                  value={mapeo.stock.deposito}
+                  onChange={(e) => handleMapeoChange('stock', 'deposito', e.target.value)}
                 />
                 <SelectAsignacion
                   label="Stock Reservado"

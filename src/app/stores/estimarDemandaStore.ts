@@ -20,6 +20,7 @@ interface Configuracion {
     stock: {
       productoId: string;
       cantidad: string;
+      deposito: string;
       stockReservado?: string;
       descripcion?: string;
     };
@@ -30,11 +31,13 @@ interface ResultadoItem {
   productoId: string | number;
   descripcion: string;
   venta: number;
-  stock: number;
-  stockReservado: number;
-  stockNeto: number;
+  stockCABA: number;
+  stockReservadoCABA: number;
+  stockNetoCABA: number;
+  stockEntreRios: number;
   mesesCobertura: number;
   demandaInsatisfecha: number;
+  pedirAEntreRios: string;
   sugerencia: string;
   criticidad: 'alta' | 'media' | 'baja';
 }

@@ -47,10 +47,12 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
         <tr>
           <th scope="col" className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Descripción</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">ID Producto</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Venta Mensual (Mes Pico)</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Actual</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Venta Mensual</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock CABA</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Reservado</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Neto</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Neto CABA</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Entre Ríos</th>
+          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Pedir a Entre Ríos</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Meses Cobertura</th>
         </tr>
       </thead>
@@ -69,13 +71,26 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
                 {item.venta.toLocaleString()}
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
-                {item.stock.toLocaleString()}
+                {item.stockCABA.toLocaleString()}
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
-                {item.stockReservado.toLocaleString()}
+                {item.stockReservadoCABA.toLocaleString()}
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white text-center">
-                {item.stockNeto.toLocaleString()}
+                {item.stockNetoCABA.toLocaleString()}
+              </td>
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-blue-600 dark:text-blue-400 text-center font-medium">
+                {item.stockEntreRios.toLocaleString()}
+              </td>
+              <td className="whitespace-nowrap px-6 py-4 text-sm text-center">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  item.pedirAEntreRios === 'No necesario' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                  item.pedirAEntreRios === 'Sin stock disponible en ambos' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                  item.pedirAEntreRios.includes('insuficiente') ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' :
+                  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                }`}>
+                  {item.pedirAEntreRios}
+                </span>
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-center">
                 <span className={`px-2 py-1 rounded-full text-xs ${
@@ -118,11 +133,14 @@ export function ResultsStep() {
     worksheet.columns = [
       { header: 'Descripción', key: 'descripcion', width: 40 },
       { header: 'ID Producto', key: 'productoId', width: 20 },
-      { header: 'Venta Mensual (Mes Pico)', key: 'venta', width: 25 },
-      { header: 'Stock Actual', key: 'stock', width: 15 },
-      { header: 'Stock Reservado', key: 'stockReservado', width: 20 },
-      { header: 'Stock Neto', key: 'stockNeto', width: 15 },
+      { header: 'Venta Mensual', key: 'venta', width: 20 },
+      { header: 'Stock CABA', key: 'stockCABA', width: 15 },
+      { header: 'Stock Reservado CABA', key: 'stockReservadoCABA', width: 20 },
+      { header: 'Stock Neto CABA', key: 'stockNetoCABA', width: 18 },
+      { header: 'Stock Entre Ríos', key: 'stockEntreRios', width: 18 },
+      { header: 'Pedir a Entre Ríos', key: 'pedirAEntreRios', width: 25 },
       { header: 'Meses Cobertura', key: 'mesesCobertura', width: 20 },
+      { header: 'Sugerencia', key: 'sugerencia', width: 50 },
       { header: 'Criticidad', key: 'criticidad', width: 15 },
     ];
 
@@ -208,19 +226,22 @@ export function ResultsStep() {
         </div>
         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <h5 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Leyenda de Criticidad:</h5>
-          <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex flex-wrap gap-4 text-sm mb-3">
             <div className="flex items-center gap-2">
               <span className="w-4 h-4 bg-red-500 border border-red-700 rounded"></span>
-              <span className="text-gray-900 dark:text-gray-300">Crítico (&lt; 4 meses)</span>
+              <span className="text-gray-900 dark:text-gray-300">Alta: Stock CABA insuficiente, sin stock en Entre Ríos o insuficiente</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-4 h-4 bg-yellow-400 border border-yellow-600 rounded"></span>
-              <span className="text-gray-900 dark:text-gray-300">Atención (= 4 meses)</span>
+              <span className="text-gray-900 dark:text-gray-300">Media: Stock CABA insuficiente, pero hay stock disponible en Entre Ríos</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-4 h-4 bg-green-500 border border-green-700 rounded"></span>
-              <span className="text-gray-900 dark:text-gray-300">Adecuado (&gt; 4 meses)</span>
+              <span className="text-gray-900 dark:text-gray-300">Baja: Stock CABA suficiente (≥ 4 meses de cobertura)</span>
             </div>
+          </div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 border-t border-gray-300 dark:border-gray-600 pt-2">
+            <strong>Nota:</strong> La lógica considera que si Entre Ríos tiene stock para 3+ meses de rotación, puede cubrir la demanda insatisfecha de CABA.
           </div>
         </div>
       </div>
