@@ -8,6 +8,10 @@ export interface Modulo {
   descripcion: string;
   activo: boolean;
   categoria: keyof typeof CATEGORIAS_MODULOS;
+  tooltip?: {
+    descripcion: string;
+    inputRequerido: string;
+  };
 }
 
 export const MODULOS_DISPONIBLES: Modulo[] = [
@@ -27,7 +31,11 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     icono: '📈',
     descripcion: 'Análisis demanda vs stock',
     activo: true,
-    categoria: 'inventario'
+    categoria: 'inventario',
+    tooltip: {
+      descripcion: 'Analiza la demanda mensual vs stock disponible en CABA y Entre Ríos. Calcula meses de cobertura y sugiere transferencias entre depósitos.',
+      inputRequerido: 'Requiere 2 archivos Excel: 1) Ventas (ID producto, cantidad, fecha, descripción) 2) Stock (ID producto, cantidad, depósito CABA/Entre Ríos, stock reservado)'
+    }
   },
   {
     id: 'reporte-de-ventas',
@@ -36,7 +44,11 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     icono: '🛒',
     descripcion: 'Análisis de ventas por producto',
     activo: true,
-    categoria: 'ventas'
+    categoria: 'ventas',
+    tooltip: {
+      descripcion: 'Genera reportes detallados de ventas con gráficos interactivos, análisis por categorías, top productos y clientes. Incluye filtros avanzados y exportación.',
+      inputRequerido: 'Requiere 1 archivo Excel con datos de ventas: ID producto, descripción, categoría, cliente, cantidad, importe, fecha'
+    }
   },
   {
     id: 'redistribucion-stock',
@@ -45,7 +57,11 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     icono: '🚚',
     descripcion: 'Redistribución entre depósitos según rotación',
     activo: true,
-    categoria: 'inventario'
+    categoria: 'inventario',
+    tooltip: {
+      descripcion: 'Optimiza la distribución de stock entre CABA y Entre Ríos basado en rotación mensual. Identifica productos que necesitan transferencia.',
+      inputRequerido: 'Requiere 1 archivo Excel con: ID producto, descripción, stock CABA (MP+PT), stock Entre Ríos (MP+PT), rotación mensual'
+    }
   },
   {
     id: 'gestion-ventas',
