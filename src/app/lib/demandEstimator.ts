@@ -264,12 +264,35 @@ export function estimarDemanda(
         criticidad = 'alta';
         pedirAEntreRios = `${stockEntreRios}`;
         const faltante = demandaInsatisfecha - stockEntreRios;
-        sugerencia = `Pedir ${stockEntreRios} unidades de Entre Ríos y comprar ${Math.ceil(faltante)} unidades adicionales.`;
+        
+        if (stockNetoCABA > 0) {
+          // Hay stock en ambos pero insuficiente
+          pedirAEntreRios = 'Stock insuficiente en CABA y Entre Ríos';
+          sugerencia = `Pedir ${stockEntreRios} unidades de Entre Ríos y comprar ${Math.ceil(faltante)} unidades adicionales.`;
+        } else {
+          // No hay stock neto en CABA pero sí en Entre Ríos
+          pedirAEntreRios = 'Stock insuficiente en Entre Ríos';
+          sugerencia = `Pedir ${stockEntreRios} unidades de Entre Ríos y comprar ${Math.ceil(faltante)} unidades adicionales.`;
+        }
       } else {
         // No hay stock en Entre Ríos
         criticidad = 'alta';
-        pedirAEntreRios = 'Sin stock disponible en ambos';
-        sugerencia = `Comprar ${Math.ceil(demandaInsatisfecha)} unidades para 4 meses de cobertura.`;
+        
+        if (stockNetoCABA > 0) {
+          // Hay stock en CABA pero no en Entre Ríos, y CABA es insuficiente
+          pedirAEntreRios = 'Stock CABA insuficiente, Entre Ríos sin stock';
+          sugerencia = `Stock CABA insuficiente (${mesesCoberturaCABA.toFixed(1)} meses). Comprar ${Math.ceil(demandaInsatisfecha)} unidades para 4 meses de cobertura.`;
+        } else {
+          // No hay stock neto en CABA
+          if (stockCABA === 0 && stockEntreRios === 0) {
+            // Realmente no hay stock en ningún depósito
+            pedirAEntreRios = 'Sin stock disponible en ambos';
+          } else {
+            // Hay stock CABA pero está todo reservado, sin stock en Entre Ríos
+            pedirAEntreRios = 'Stock CABA insuficiente, Entre Ríos sin stock';
+          }
+          sugerencia = `Comprar ${Math.ceil(demandaInsatisfecha)} unidades para 4 meses de cobertura.`;
+        }
       }
     }
 
