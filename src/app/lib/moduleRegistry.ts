@@ -34,7 +34,7 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     categoria: 'inventario',
     tooltip: {
       descripcion: 'Analiza la demanda mensual vs stock disponible en CABA y Entre Ríos. Calcula meses de cobertura y sugiere transferencias entre depósitos.',
-      inputRequerido: 'Requiere 2 archivos Excel: 1) Ventas (ID producto, cantidad, fecha, descripción) 2) Stock (ID producto, cantidad, depósito CABA/Entre Ríos, stock reservado)'
+      inputRequerido: 'Requiere 2 reportes Excel de Tango: 1) Planilla de ventas (ID producto, cantidad, fecha, descripción) 2) Planilla de stock (ID producto, cantidad, depósito CABA/Entre Ríos, stock reservado)'
     }
   },
   {
@@ -47,7 +47,7 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     categoria: 'ventas',
     tooltip: {
       descripcion: 'Genera reportes detallados de ventas con gráficos interactivos, análisis por categorías, top productos y clientes. Incluye filtros avanzados y exportación.',
-      inputRequerido: 'Requiere 1 archivo Excel con datos de ventas: ID producto, descripción, categoría, cliente, cantidad, importe, fecha'
+      inputRequerido: 'Requiere 1 reporte Excel de Tango con datos de ventas: ID producto, descripción, categoría, cliente, cantidad, importe, fecha'
     }
   },
   {
@@ -60,7 +60,7 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     categoria: 'inventario',
     tooltip: {
       descripcion: 'Optimiza la distribución de stock entre CABA y Entre Ríos basado en rotación mensual. Identifica productos que necesitan transferencia.',
-      inputRequerido: 'Requiere 1 archivo Excel con: ID producto, descripción, stock CABA (MP+PT), stock Entre Ríos (MP+PT), rotación mensual'
+      inputRequerido: 'De Google Drive usar "Planilla integral de stock", solapa "Info hierbas para compra" columnas A-H (ID producto, descripción, stock CABA MP+PT, stock Entre Ríos MP+PT, rotación mensual)'
     }
   },
   {
