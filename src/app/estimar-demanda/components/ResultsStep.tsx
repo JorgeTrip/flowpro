@@ -45,8 +45,8 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead className="bg-gray-100 dark:bg-gray-800">
         <tr>
-          <th scope="col" className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Descripción</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">ID Producto</th>
+          <th scope="col" className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Descripción</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Venta Mensual</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock CABA</th>
           <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Reservado</th>
@@ -61,11 +61,11 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
           const criticalityClass = getCriticalityColor(item.criticidad);
           return (
             <tr key={`${item.productoId}-${index}`} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${criticalityClass}`}>
-              <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white w-64 break-words">
-                {item.descripcion}
-              </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-900 dark:text-white text-center">
                 {item.productoId}
+              </td>
+              <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white w-64 break-words">
+                {item.descripcion}
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
                 {item.venta.toLocaleString()}
@@ -130,19 +130,39 @@ export function ResultsStep() {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Análisis de Demanda');
 
-    worksheet.columns = [
-      { header: 'Descripción', key: 'descripcion', width: 40 },
-      { header: 'ID Producto', key: 'productoId', width: 20 },
-      { header: 'Venta Mensual', key: 'venta', width: 20 },
-      { header: 'Stock CABA', key: 'stockCABA', width: 15 },
-      { header: 'Stock Reservado CABA', key: 'stockReservadoCABA', width: 20 },
-      { header: 'Stock Neto CABA', key: 'stockNetoCABA', width: 18 },
-      { header: 'Stock Entre Ríos', key: 'stockEntreRios', width: 18 },
-      { header: 'Pedir a Entre Ríos', key: 'pedirAEntreRios', width: 25 },
-      { header: 'Meses Cobertura', key: 'mesesCobertura', width: 20 },
-      { header: 'Sugerencia', key: 'sugerencia', width: 50 },
-      { header: 'Criticidad', key: 'criticidad', width: 15 },
+    const headers = [
+      'ID Producto',
+      'Descripción',
+      'Venta Mensual',
+      'Stock CABA',
+      'Stock Reservado CABA',
+      'Stock Neto CABA',
+      'Stock Entre Ríos',
+      'Pedir a Entre Ríos',
+      'Meses Cobertura',
+      'Criticidad',
+      'Sugerencia'
     ];
+
+    const data = resultados.map(item => [
+      item.productoId,
+      item.descripcion,
+      item.venta,
+      item.stockCABA,
+      item.stockReservadoCABA,
+      item.stockNetoCABA,
+      item.stockEntreRios,
+      item.pedirAEntreRios,
+      item.mesesCobertura,
+      item.criticidad,
+      item.sugerencia
+    ]);
+
+    worksheet.columns = headers.map((header, index) => ({
+      header,
+      key: header.toLowerCase().replace(' ', ''),
+      width: index === 1 ? 40 : index === 8 ? 25 : index === 10 ? 50 : index === 9 ? 15 : 20,
+    }));
 
     const headerRow = worksheet.getRow(1);
     headerRow.eachCell((cell) => {
