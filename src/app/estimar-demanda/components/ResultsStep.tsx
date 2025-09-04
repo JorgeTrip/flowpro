@@ -175,11 +175,8 @@ export function ResultsStep() {
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
 
-    resultados.forEach(item => {
-      worksheet.addRow({
-        ...item,
-        mesesCobertura: item.mesesCobertura === 999 ? '∞' : item.mesesCobertura,
-      });
+    data.forEach(row => {
+      worksheet.addRow(row);
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
