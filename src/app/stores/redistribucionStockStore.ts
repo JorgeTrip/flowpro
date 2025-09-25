@@ -20,17 +20,23 @@ interface Configuracion {
   };
 }
 
-interface ResultadoItem {
+export interface ResultadoItem {
   productoId: string | number;
   descripcion: string;
+  // Stocks CABA
+  stockCABAMateriaPrima: number;
+  stockCABAProductoTerminado: number;
   stockCABATotal: number;
+  // Stocks Entre Ríos
+  stockEntreRiosMateriaPrima: number;
+  stockEntreRiosProductoTerminado: number;
   stockEntreRiosTotal: number;
+  // Datos de rotación y análisis
   rotacionMensual: number;
   accion: 'Pedir a Entre Ríos' | 'Sin stock disponible' | 'Stock suficiente';
   cantidadSugerida: number;
   criticidad: 'alta' | 'media' | 'baja';
 }
-
 export interface RedistribucionStockState {
   // State
   step: number;

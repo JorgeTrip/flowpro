@@ -11,11 +11,18 @@ interface MapeoRedistribucion {
   rotacionMensual: string;
 }
 
-interface ResultadoRedistribucion {
+export interface ResultadoRedistribucion {
   productoId: string | number;
   descripcion: string;
+  // Stocks CABA
+  stockCABAMateriaPrima: number;
+  stockCABAProductoTerminado: number;
   stockCABATotal: number;
+  // Stocks Entre Ríos
+  stockEntreRiosMateriaPrima: number;
+  stockEntreRiosProductoTerminado: number;
   stockEntreRiosTotal: number;
+  // Datos de rotación y análisis
   rotacionMensual: number;
   accion: 'Pedir a Entre Ríos' | 'Sin stock disponible' | 'Stock suficiente';
   cantidadSugerida: number;
@@ -86,8 +93,15 @@ export function redistribuirStock(
     resultados.push({
       productoId: String(productoId),
       descripcion,
+      // Stocks CABA
+      stockCABAMateriaPrima: stockCABAMP,
+      stockCABAProductoTerminado: stockCABAPT,
       stockCABATotal,
+      // Stocks Entre Ríos
+      stockEntreRiosMateriaPrima: stockEntreRiosMP,
+      stockEntreRiosProductoTerminado: stockEntreRiosPT,
       stockEntreRiosTotal,
+      // Datos de rotación y análisis
       rotacionMensual,
       accion,
       cantidadSugerida,

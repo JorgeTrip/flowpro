@@ -18,8 +18,15 @@ interface ChartData {
 interface ResultadoItem {
   productoId: string | number;
   descripcion: string;
+  // Stocks CABA
+  stockCABAMateriaPrima: number;
+  stockCABAProductoTerminado: number;
   stockCABATotal: number;
+  // Stocks Entre Ríos
+  stockEntreRiosMateriaPrima: number;
+  stockEntreRiosProductoTerminado: number;
   stockEntreRiosTotal: number;
+  // Datos de rotación y análisis
   rotacionMensual: number;
   accion: 'Pedir a Entre Ríos' | 'Sin stock disponible' | 'Stock suficiente';
   cantidadSugerida: number;
@@ -67,13 +74,21 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
       <thead className="bg-gray-100 dark:bg-gray-800">
         <tr>
-          <th scope="col" className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Descripción</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">ID Producto</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock CABA</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Entre Ríos</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Rotación Mensual</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Acción</th>
-          <th scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Cantidad Sugerida</th>
+          <th rowSpan={2} scope="col" className="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200 align-middle">Descripción</th>
+          <th rowSpan={2} scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200 align-middle">ID Producto</th>
+          <th colSpan={3} scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock CABA</th>
+          <th colSpan={3} scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">Stock Entre Ríos</th>
+          <th rowSpan={2} scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200 align-middle">Rotación Mensual</th>
+          <th rowSpan={2} scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200 align-middle">Acción</th>
+          <th rowSpan={2} scope="col" className="px-6 py-3 text-center text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200 align-middle">Cantidad Sugerida</th>
+        </tr>
+        <tr>
+          <th scope="col" className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">MP</th>
+          <th scope="col" className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">PT</th>
+          <th scope="col" className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Total</th>
+          <th scope="col" className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">MP</th>
+          <th scope="col" className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">PT</th>
+          <th scope="col" className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Total</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
@@ -87,11 +102,19 @@ const ResultsTable = ({ data }: { data: ResultadoItem[] }) => (
               <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-900 dark:text-white text-center">
                 {item.productoId}
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
-                {item.stockCABATotal.toLocaleString()}
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 dark:text-white text-center">{item.stockCABAMateriaPrima.toLocaleString()}</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 dark:text-white text-center">{item.stockCABAProductoTerminado.toLocaleString()}</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-center">
+                <span className="px-2 py-1 rounded-full text-xs bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300">
+                  {item.stockCABATotal.toLocaleString()}
+                </span>
               </td>
-              <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
-                {item.stockEntreRiosTotal.toLocaleString()}
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 dark:text-white text-center">{item.stockEntreRiosMateriaPrima.toLocaleString()}</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900 dark:text-white text-center">{item.stockEntreRiosProductoTerminado.toLocaleString()}</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm text-center">
+                <span className="px-2 py-1 rounded-full text-xs bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300">
+                  {item.stockEntreRiosTotal.toLocaleString()}
+                </span>
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-white text-center">
                 {item.rotacionMensual.toLocaleString()}
@@ -177,8 +200,15 @@ export function ResultsStep() {
     worksheet.columns = [
       { header: 'ID Producto', key: 'productoId', width: 15 },
       { header: 'Descripción', key: 'descripcion', width: 40 },
-      { header: 'Stock CABA Total', key: 'stockCABATotal', width: 18 },
-      { header: 'Stock Entre Ríos Total', key: 'stockEntreRiosTotal', width: 20 },
+      // Stocks CABA
+      { header: 'CABA - MP', key: 'stockCABAMateriaPrima', width: 15 },
+      { header: 'CABA - PT', key: 'stockCABAProductoTerminado', width: 15 },
+      { header: 'CABA - Total', key: 'stockCABATotal', width: 15 },
+      // Stocks Entre Ríos
+      { header: 'ER - MP', key: 'stockEntreRiosMateriaPrima', width: 15 },
+      { header: 'ER - PT', key: 'stockEntreRiosProductoTerminado', width: 15 },
+      { header: 'ER - Total', key: 'stockEntreRiosTotal', width: 15 },
+      // Datos de rotación y análisis
       { header: 'Rotación Mensual', key: 'rotacionMensual', width: 18 },
       { header: 'Acción', key: 'accion', width: 20 },
       { header: 'Cantidad Sugerida', key: 'cantidadSugerida', width: 18 },
@@ -190,8 +220,15 @@ export function ResultsStep() {
       worksheet.addRow({
         productoId: item.productoId,
         descripcion: item.descripcion,
+        // Stocks CABA
+        stockCABAMateriaPrima: item.stockCABAMateriaPrima,
+        stockCABAProductoTerminado: item.stockCABAProductoTerminado,
         stockCABATotal: item.stockCABATotal,
+        // Stocks Entre Ríos
+        stockEntreRiosMateriaPrima: item.stockEntreRiosMateriaPrima,
+        stockEntreRiosProductoTerminado: item.stockEntreRiosProductoTerminado,
         stockEntreRiosTotal: item.stockEntreRiosTotal,
+        // Datos de rotación y análisis
         rotacionMensual: item.rotacionMensual,
         accion: item.accion,
         cantidadSugerida: item.cantidadSugerida,
