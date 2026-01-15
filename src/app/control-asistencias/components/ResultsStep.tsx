@@ -68,6 +68,15 @@ export function ResultsStep() {
     return out;
   }, [dateFrom, dateTo]);
 
+  const isTodos = !empleadoSel || empleadoSel === '(Todos)';
+
+  const baseFechasForKpi = useMemo(() => {
+    if (!config?.mapeo) return [] as string[];
+    const francos = config.defaults.francos || [];
+    const base = selectedDates.length > 0 ? selectedDates : fullRangeDates;
+    return base.filter((f) => !francos.includes(isoDow(f)));
+  }, [config, selectedDates, fullRangeDates]);
+
   const analisisEmpleado: DayAnalysisRow[] = useMemo(() => {
     const emp = empleadoSel && empleadoSel !== '(Todos)' ? empleadoSel : empleados[0];
     if (!emp || !config?.mapeo) return [];
@@ -78,19 +87,34 @@ export function ResultsStep() {
     return fechas.map((f) => analizarDia(eventos, emp, f, config));
   }, [empleadoSel, empleados, eventos, config, selectedDates, fullRangeDates]);
 
+  const analisisTodos: DayAnalysisRow[] = useMemo(() => {
+    if (!config?.mapeo) return [];
+    const francos = config.defaults.francos || [];
+    const base = selectedDates.length > 0 ? selectedDates : fullRangeDates;
+    const fechas = base.filter((f) => !francos.includes(isoDow(f)));
+    const rows: DayAnalysisRow[] = [];
+    empleados.forEach((emp) => {
+      fechas.forEach((f) => {
+        rows.push(analizarDia(eventos, emp, f, config));
+      });
+    });
+    return rows;
+  }, [config, empleados, eventos, selectedDates, fullRangeDates]);
+
   // KPIs
   const kpis = useMemo(() => {
-    const total = analisisEmpleado.length;
-    const tardes = analisisEmpleado.filter((d) => d.tardanzaMin > 0).length;
-    const retiros = analisisEmpleado.filter((d) => d.retiroAnticipadoMin > 0).length;
-    const almFuera = analisisEmpleado.filter((d) => d.almuerzoFueraFranja).length;
-    const almExced = analisisEmpleado.filter((d) => d.almuerzoExcedido).length;
-    const ausentes = analisisEmpleado.filter((d) => d.ausente).length;
+    const baseRows = isTodos ? analisisTodos : analisisEmpleado;
+    const total = isTodos ? baseFechasForKpi.length : baseRows.length;
+    const tardes = baseRows.filter((d) => d.tardanzaMin > 0).length;
+    const retiros = baseRows.filter((d) => d.retiroAnticipadoMin > 0).length;
+    const almFuera = baseRows.filter((d) => d.almuerzoFueraFranja).length;
+    const almExced = baseRows.filter((d) => d.almuerzoExcedido).length;
+    const ausentes = baseRows.filter((d) => d.ausente).length;
     const promTarde = Math.round(
-      analisisEmpleado.reduce((acc, x) => acc + (x.tardanzaMin || 0), 0) / (total || 1)
+      baseRows.reduce((acc, x) => acc + (x.tardanzaMin || 0), 0) / (total || 1)
     );
     return { total, tardes, retiros, almFuera, almExced, promTarde, ausentes };
-  }, [analisisEmpleado]);
+  }, [isTodos, analisisEmpleado, analisisTodos, baseFechasForKpi]);
 
   // Filtros globales
   const [filtroTarde, setFiltroTarde] = useState(true);
