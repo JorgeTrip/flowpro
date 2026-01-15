@@ -32,7 +32,6 @@ export function ConfigStep() {
     setStep,
     setMapeo,
     setDefaultConfig,
-    setHorarioEmpleado,
     recomputarEmpleados,
     normalizarEventos,
   } = useAsistenciasStore();
@@ -57,7 +56,7 @@ export function ConfigStep() {
       };
       setMapeoLocal(auto);
     }
-  }, [fichadasColumnas]);
+  }, [fichadasColumnas, mapeo.empleado, mapeo.fecha, mapeo.hora, mapeo.tipo]);
 
   const isReady = useMemo(() => !!(mapeo.empleado && mapeo.fecha && mapeo.hora && mapeo.tipo), [mapeo]);
 
@@ -157,7 +156,7 @@ function EmpleadosTable() {
   const { empleados, config, setHorarioEmpleado } = useAsistenciasStore();
 
   if (!empleados.length) {
-    return <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">No hay empleados detectados aún. Cargue la planilla y presione "Cargar empleados".</p>;
+    return <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">No hay empleados detectados aún. Cargue la planilla y presione &quot;Cargar empleados&quot;.</p>;
   }
 
   return (
