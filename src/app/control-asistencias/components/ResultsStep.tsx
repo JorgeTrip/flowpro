@@ -9,6 +9,13 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
+function isoDow(iso: string): number {
+  if (!iso) return 0;
+  const [y, m, d] = iso.split('-').map((x) => parseInt(x, 10));
+  const dt = new Date(y || 1970, (m || 1) - 1, d || 1);
+  return dt.getDay();
+}
+
 export function ResultsStep() {
   const { setStep, empleados, eventos, config } = useAsistenciasStore();
   const [empleadoSel, setEmpleadoSel] = useState<string>('');
@@ -20,16 +27,24 @@ export function ResultsStep() {
 
   const empleadosOptions = useMemo(() => ['(Todos)', ...empleados], [empleados]);
 
-  const fechasPorEmpleado = useMemo(() => {
-    const map = new Map<string, Set<string>>();
-    eventos.forEach((e) => {
-      if (!map.has(e.empleado)) map.set(e.empleado, new Set());
-      map.get(e.empleado)!.add(e.fecha);
-    });
-    return map;
-  }, [eventos]);
-
   const allFechas = useMemo(() => Array.from(new Set(eventos.map((e) => e.fecha))).sort(), [eventos]);
+  const fullRangeDates = useMemo(() => {
+    if (allFechas.length === 0) return [] as string[];
+    const start = allFechas[0];
+    const end = allFechas[allFechas.length - 1];
+    const a = new Date(start);
+    const b = new Date(end);
+    const out: string[] = [];
+    const cur = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+    while (cur <= b) {
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, '0');
+      const d = String(cur.getDate()).padStart(2, '0');
+      out.push(`${y}-${m}-${d}`);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return out;
+  }, [allFechas]);
 
   const selectedDates = useMemo(() => {
     if (!dateFrom && !dateTo) return [] as string[];
@@ -58,17 +73,10 @@ export function ResultsStep() {
     if (!emp || !config?.mapeo) return [];
     const francos = config.defaults.francos || [];
     let fechas: string[] = [];
-    if (selectedDates.length > 0) {
-      fechas = selectedDates.filter((f) => !francos.includes(new Date(f).getDay()));
-    } else {
-      const fechasEmp = Array.from(fechasPorEmpleado.get(emp) || []);
-      const setUnion = new Set<string>([...fechasEmp, ...allFechas]);
-      fechas = Array.from(setUnion)
-        .filter((f) => !francos.includes(new Date(f).getDay()))
-        .sort();
-    }
+    const base = selectedDates.length > 0 ? selectedDates : fullRangeDates;
+    fechas = base.filter((f) => !francos.includes(isoDow(f)));
     return fechas.map((f) => analizarDia(eventos, emp, f, config));
-  }, [empleadoSel, empleados, eventos, config, fechasPorEmpleado, allFechas, selectedDates]);
+  }, [empleadoSel, empleados, eventos, config, selectedDates, fullRangeDates]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -96,13 +104,8 @@ export function ResultsStep() {
     const rows: DayAnalysisRow[] = [];
     empleados.forEach((emp) => {
       const francos = config.defaults.francos || [];
-      let fechas: string[] = [];
-      if (selectedDates.length > 0) {
-        fechas = selectedDates.filter((f) => !francos.includes(new Date(f).getDay()));
-      } else {
-        fechas = Array.from(fechasPorEmpleado.get(emp) || [])
-          .filter((f) => !francos.includes(new Date(f).getDay()));
-      }
+      const base = selectedDates.length > 0 ? selectedDates : fullRangeDates;
+      const fechas = base.filter((f) => !francos.includes(isoDow(f)));
       fechas.forEach((f) => {
         const row = analizarDia(eventos, emp, f, config);
         const key = `${emp}|${f}`;
@@ -118,14 +121,13 @@ export function ResultsStep() {
       (filtroAlmFranja && r.almuerzoFueraFranja) ||
       (filtroAlmExced && r.almuerzoExcedido)
     ).sort((a, b) => a.empleado.localeCompare(b.empleado) || a.fecha.localeCompare(b.fecha));
-  }, [config, empleados, fechasPorEmpleado, eventos, filtroTarde, filtroRetiro, filtroAlmFranja, filtroAlmExced, selectedDates]);
+  }, [config, empleados, eventos, filtroTarde, filtroRetiro, filtroAlmFranja, filtroAlmExced, selectedDates, fullRangeDates]);
 
   const ausenciasDetalle = useMemo(() => {
     if (!config?.mapeo) return [] as { empleado: string; cantidad: number; fechas: string[] }[];
     const francos = config.defaults.francos || [];
-    const baseFechas = selectedDates.length > 0
-      ? selectedDates.filter((f) => !francos.includes(new Date(f).getDay()))
-      : allFechas.filter((f) => !francos.includes(new Date(f).getDay()));
+    const baseBase = selectedDates.length > 0 ? selectedDates : fullRangeDates;
+    const baseFechas = baseBase.filter((f) => !francos.includes(isoDow(f)));
     const out: { empleado: string; cantidad: number; fechas: string[] }[] = [];
     empleados.forEach((emp) => {
       const faltas: string[] = [];
@@ -136,7 +138,7 @@ export function ResultsStep() {
       if (faltas.length > 0) out.push({ empleado: emp, cantidad: faltas.length, fechas: faltas.sort() });
     });
     return out.sort((a, b) => a.empleado.localeCompare(b.empleado));
-  }, [config, empleados, eventos, selectedDates, allFechas]);
+  }, [config, empleados, eventos, selectedDates, allFechas, fullRangeDates]);
 
   const formatMin = (m?: number) => (m !== undefined ? `${m} min` : '-');
   const dayName = (iso: string) => {
