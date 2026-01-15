@@ -41,7 +41,10 @@ function processFormulaResult(result: unknown): ExcelCellValue {
   return result === null || result === undefined ? '' : result as ExcelCellValue;
 }
 
-export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], columns: string[], previewData: ExcelRow[] }> {
+export async function processExcelFile(
+  file: File,
+  options?: { headerRowIndex?: number; sheetIndex?: number }
+): Promise<{ data: ExcelRow[]; columns: string[]; previewData: ExcelRow[] }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -55,7 +58,33 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(buffer);
 
-        const worksheet = workbook.worksheets[0];
+        const headerRowIndex = options?.headerRowIndex ?? 1;
+        const expectedHeaderTokens = ['fecha','hora','evento','persona','empleado','idfichada','sucursal','registrador','observaciones','cliente','articulo','artículo','descripcion','descripción','cantidad','preciototal'];
+
+        // Tomar la hoja indicada o la primera por defecto
+        const explicitIndex = options?.sheetIndex;
+        let worksheet = typeof explicitIndex === 'number' ? workbook.worksheets[explicitIndex] : workbook.worksheets[0];
+
+        // Si la hoja elegida no tiene encabezados útiles en la fila indicada, intentar detectar otra hoja razonable
+        const headersFrom = (ws: ExcelJS.Worksheet) => {
+          const row = ws.getRow(headerRowIndex);
+          return ((row.values as string[])?.slice(1) || []).map(h => (h || '').toString().trim());
+        };
+
+        const headersLower = (arr: string[]) => arr.map(h => h.toLowerCase());
+
+        let currentHeaders = headersFrom(worksheet);
+        if (!currentHeaders.length || currentHeaders.every(h => !h)) {
+          const found = workbook.worksheets.find(ws => {
+            const hs = headersLower(headersFrom(ws));
+            return hs.length > 0 && hs.some(h => expectedHeaderTokens.some(t => h.includes(t)));
+          });
+          if (found) {
+            worksheet = found;
+            currentHeaders = headersFrom(found);
+          }
+        }
+
         if (!worksheet) {
           return reject(new Error('No se encontró ninguna hoja de cálculo en el archivo.'));
         }
@@ -64,9 +93,9 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
         const previewData: ExcelRow[] = [];
         let columns: string[] = [];
 
-        const headerRow = worksheet.getRow(1);
-        const rawHeaders = (headerRow.values as string[])?.slice(1) || [];
-        columns = rawHeaders.map(h => h?.trim() || '');
+        const headerRow = worksheet.getRow(headerRowIndex);
+        const rawHeaders = (headerRow.values as unknown[])?.slice(1) || [];
+        columns = rawHeaders.map((h) => String(h ?? '').trim());
 
         // Mapeo de cabeceras flexibles - mantener nombres originales para redistribución
         const headerMapping: { [key: string]: string } = {};
@@ -95,12 +124,12 @@ export async function processExcelFile(file: File): Promise<{ data: ExcelRow[], 
         });
 
         // Process data rows
-        for (let i = 2; i <= worksheet.rowCount; i++) {
+        for (let i = headerRowIndex + 1; i <= worksheet.rowCount; i++) {
           const row = worksheet.getRow(i);
           const rowData: ExcelRow = {};
           let hasValues = false;
 
-          // Procesar todas las columnas, incluso las vacías
+          // Procesar todas las columnas de acuerdo a los encabezados, incluso las vacías
           for (let colNumber = 1; colNumber <= columns.length; colNumber++) {
             const header = columns[colNumber - 1];
             if (header) {

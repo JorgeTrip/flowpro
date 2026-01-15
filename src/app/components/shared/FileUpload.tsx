@@ -19,9 +19,11 @@ interface FileUploadProps<T> {
   onFileLoad: (file: File, data: ProcessedExcelData<T>) => void;
   setIsLoading?: (loading: boolean) => void;
   setError?: (error: string | null) => void;
+  headerRowIndex?: number;
+  sheetIndex?: number;
 }
 
-export function FileUpload<T>({ title, description, file, onFileLoad, setIsLoading, setError }: FileUploadProps<T>) {
+export function FileUpload<T>({ title, description, file, onFileLoad, setIsLoading, setError, headerRowIndex, sheetIndex }: FileUploadProps<T>) {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const uploadedFile = acceptedFiles[0];
     if (uploadedFile) {
@@ -33,7 +35,15 @@ export function FileUpload<T>({ title, description, file, onFileLoad, setIsLoadi
         setError(null);
       }
       try {
-        const processedData = await processExcelFile(uploadedFile);
+        // Bloquear .xls: ExcelJS no soporta .xls en navegador
+        const isXls = /\.xls$/i.test(uploadedFile.name) && !/\.xlsx$/i.test(uploadedFile.name);
+        if (isXls) {
+          if (typeof setError === 'function') {
+            setError('El formato .xls no es soportado. Por favor, guarde/exporte el archivo como .xlsx e intente nuevamente.');
+          }
+          throw new Error('Formato .xls no soportado en navegador');
+        }
+        const processedData = await processExcelFile(uploadedFile, { headerRowIndex, sheetIndex });
         onFileLoad(uploadedFile, processedData as ProcessedExcelData<T>);
       } catch (error: unknown) {
         if (typeof setError === 'function') {
@@ -45,13 +55,22 @@ export function FileUpload<T>({ title, description, file, onFileLoad, setIsLoadi
         }
       }
     }
-  }, [onFileLoad, setIsLoading, setError]);
+  }, [onFileLoad, setIsLoading, setError, headerRowIndex, sheetIndex]);
+
+  const onDropRejected = useCallback(() => {
+    if (typeof setError === 'function') {
+      setError('Formato no permitido. Cargue un archivo .xlsx (.xls no es soportado en el navegador).');
+    }
+    if (typeof setIsLoading === 'function') {
+      setIsLoading(false);
+    }
+  }, [setError, setIsLoading]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     accept: {
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
     },
     maxFiles: 1,
   });
@@ -82,7 +101,7 @@ export function FileUpload<T>({ title, description, file, onFileLoad, setIsLoadi
               : 'Arrastre y suelte su archivo Excel aquí, o haga clic para seleccionarlo'}
           </p>
         )}
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Formatos soportados: .xlsx, .xls</p>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Formato soportado: .xlsx (.xls no soportado en navegador)</p>
       </div>
     </div>
   );

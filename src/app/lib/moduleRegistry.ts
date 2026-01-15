@@ -82,6 +82,19 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     categoria: 'finanzas'
   },
   {
+    id: 'control-asistencias',
+    nombre: 'Control de Asistencias',
+    ruta: '/control-asistencias',
+    icono: '🕒',
+    descripcion: 'Fichadas, horarios y análisis de puntualidad',
+    activo: true,
+    categoria: 'personal',
+    tooltip: {
+      descripcion: 'Importa fichadas desde Excel, asigna horarios y analiza llegadas/salidas y almuerzos.',
+      inputRequerido: 'Requiere 1 planilla Excel con columnas: Empleado, Fecha, Hora, Tipo (Entrada/Salida).'
+    }
+  },
+  {
     id: 'recursos-humanos',
     nombre: 'RRHH',
     ruta: '/recursos-humanos',
